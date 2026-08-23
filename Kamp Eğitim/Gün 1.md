@@ -209,15 +209,3 @@ echo $RENK
 # tek seferlik değişken geçersiz kılma
 LANG=C ls -al
 ```
-
-## Sorular / Takip Edilecekler
-
-- [ ] Bir çevresel değişken değeri aynı kalsın istiyorum bunu nasıl yaparım.
-- [ ] Farklı kullanıcıların çevresel değişken farkları nedir?
-- [ ] Bir çevresel değişken mevcut tüm kullanıcılarda aynı olsun ama yeni kullanıcıda farklı olsun istiyorum nasıl olur.
-
-> [!TIP]
-> **Ön araştırma notu (eğitmenle teyit edilmeli)**
-> - **Kalıcı değişken:** `export DEĞİŞKEN="değer"` satırını `~/.bashrc` (etkileşimli kabuklar) dosyanın sonuna eklersen, her yeni terminal açılışında otomatik tanımlanır. Sistem genelinde tek bir kullanıcıya değil **tüm giriş kabuklarına** kalıcı olsun istersen `~/.bash_profile` / `~/.profile` de kullanılabilir (dosyaların hangi durumda okunduğu login/non-login shell farkına göre değişir — bu ayrım Gün 1'de işlenmedi, ileride netleşecektir).
-> - **Kullanıcılar arası fark:** Her kullanıcının kendi `~/.bashrc`, `~/.profile` gibi dosyaları vardır; bu yüzden aynı isimli değişken kullanıcıdan kullanıcıya farklı değer taşıyabilir — her kullanıcı kendi ev dizinindeki başlangıç dosyalarını kontrol eder.
-> - **Tüm kullanıcılarda ortak, yeni kullanıcıda farklı:** Sistem geneli için `/etc/environment` veya `/etc/profile` / `/etc/profile.d/*.sh` kullanılır (tüm kullanıcılara uygulanır). Yeni açılacak bir kullanıcıya farklı bir değer vermek için ise kullanıcı oluşturulurken şablon olarak kullanılan `/etc/skel/` dizinindeki `.bashrc`/`.profile` dosyalarına o değişkeni ekleyip, sonradan o kullanıcının kendi dosyasında override etmek gerekir. Bu konu muhtemelen ileriki günlerde ("Kullanıcı ve Grup Yönetimi" bölümü) daha ayrıntılı işlenecek.
