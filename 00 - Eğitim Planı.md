@@ -28,40 +28,40 @@ tags:
 ## GNU/Linux İşletim Sisteminin Yapısı
 
 - [ ] Açılış Sistemi
-- [ ] Dosya Sistemlerinin Tanıtılması
-- [ ] Dosya ve Dizin Hiyerarşisi
+- [x] Dosya Sistemlerinin Tanıtılması ✅ 2026-08-23
+- [x] Dosya ve Dizin Hiyerarşisi ✅ 2026-08-23
 
 ## Komut Satırı (Kabuk) ve Temel Komutlar
 
-- [ ] Kabuk Kavramı
-- [ ] Bourne-Again SHell (Bash)
-- [ ] Uçbirimde yön bulma
+- [x] Kabuk Kavramı ✅ 2026-08-23
+- [x] Bourne-Again SHell (Bash) ✅ 2026-08-23
+- [x] Uçbirimde yön bulma ✅ 2026-08-23
 	- [ ] Sık Kullanılan Kısa Yollar
 	- [ ] Geçmiş
-- [ ] Yardım Almak (man, info, help, Google :P)
-- [ ] Mutlak Yol, Bağıl Yol Kavramları
-- [ ] Dosya Türleri (Dizin, Soket, vs)
+- [x] Yardım Almak (man, info, help, Google :P) ✅ 2026-08-23
+- [x] Mutlak Yol, Bağıl Yol Kavramları ✅ 2026-08-23
+- [x] Dosya Türleri (Dizin, Soket, vs) ✅ 2026-08-23
 - [ ] Temel Komutlar
-	- [ ] pwd, ls, touch, cat, echo, cp, mv, rmdir, rm, file, mkdir, tail, head
+	- [x] pwd, ls, touch, cat, echo, cp, mv, rmdir, rm, file, mkdir, tail, head ✅ 2026-08-23
 	- [ ] grep, wc, sort, which, du, df, wget, curl
 	- [ ] Dosyaların İncelenmesi ve Düzenlenmesi
 		- [ ] vi, nano, less, more
-	- [ ] Dosya, dizin arama işlemleri
+	- [x] Dosya, dizin arama işlemleri ✅ 2026-08-23
 		- [ ] find
-	- [ ] Dosya içerik arama işlemleri
+	- [x] Dosya içerik arama işlemleri ✅ 2026-08-23
 		- [ ] grep
 	- [ ] Arşivleme (GNU Tar)
 	- [ ] Sıkıştırma Yöntemleri ve Farkları (gzip, xz, bzip2, zip, rar)
 	- [ ] Donanım Bilgisi Toplama (dmidecode, lscpu, lspci, lsusb)
-- [ ] Sembolik bağ
+- [x] Sembolik bağ ✅ 2026-08-23
 
 ## Kabuk ve Özellikleri
 
 - [ ] Çevresel Değişkenler (Giriş Seviyesi)
-- [ ] Standart Girdi/Çıktı (IO)
+- [x] Standart Girdi/Çıktı (IO) ✅ 2026-08-22
 - [ ] Mantıksal Operatorler
 - [ ] Takma Ad (Alias)
-- [ ] Girdi/Çıktının Yönlendirilmesi
+- [x] Girdi/Çıktının Yönlendirilmesi ✅ 2026-08-22
 - [ ] Özel karakterler
 
 ## Kullanıcı ve Grup Yönetimi
