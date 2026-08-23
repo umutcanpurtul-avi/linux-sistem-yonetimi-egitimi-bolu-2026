@@ -21,8 +21,6 @@ fi
 
 echo "Kök dosyalar kopyalanıyor"
 rsync -a "$VAULT/00 - Eğitim Planı.md" "$REPO/00 - Eğitim Planı.md"
-mkdir -p "$REPO/01 - VirtualBox ve Sanal Makine Kurulumu"
-rsync -a --delete "$VAULT/01 - VirtualBox ve Sanal Makine Kurulumu/" "$REPO/01 - VirtualBox ve Sanal Makine Kurulumu/"
 
 echo "Obsidian -> GitHub dönüşümü çalıştırılıyor"
 python3 "$SCRIPT_DIR/obsidian_to_github.py" "$REPO"

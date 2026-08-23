@@ -29,4 +29,3 @@ işlenmiş, uygulanabilir hali (01-15).
 ## 🗂️ Diğer
 
 - [Eğitim Planı (konu takip tablosu)](./00%20-%20Eğitim%20Planı.md)
-- [VirtualBox ile VM Kurulumu](./01%20-%20VirtualBox%20ve%20Sanal%20Makine%20Kurulumu/VirtualBox%20ve%20VM%20Kurulumu.md)
