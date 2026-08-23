@@ -247,19 +247,3 @@ sudo fdisk -l
 sudo mount /dev/sdb1 /veri
 sudo umount /veri
 ```
-
-## Sorular / Takip Edilecekler
-
-- [ ] Oluşturulan diskin içine veri ekleyip bu diski mount edersek eklenen verileri mount sonrasında gizlenecek bunu nasıl görebiliriz.
-
-> [!TIP]
-> **Ön araştırma notu (eğitmenle teyit edilmeli)**
-> Burada aslında Gün 1'de de değindiğimiz "boş dizin şartı" senaryosunun tam tersini soruyorsun; net bir örnekle açalım:
->
-> Diyelim `/veri` dizini, kök diskin (`/dev/sda1`) sıradan bir klasörü. İçine `notlarim.txt` diye bir dosya koydun. Sonra `sudo mount /dev/sdb1 /veri` çalıştırdın (ikinci diski aynı dizine bağladın). Bu andan itibaren `/veri` içine baktığında artık `/dev/sdb1`'in içeriğini görürsün — **`notlarim.txt` görünmez olur** (silinmemiştir, sadece "altta", erişilemez durumdadır, çünkü artık o dizin ismi üzerinden başka bir dosya sistemine bakıyorsun).
->
-> **Gizlenen veriyi görmenin iki yolu var:**
-> 1. **En basit yol — geçici olarak `umount` et:** `sudo umount /veri` çalıştırdığın an, üstteki disk kaldırılır ve altındaki eski `notlarim.txt` tekrar görünür hale gelir. İşin bitince tekrar `sudo mount /dev/sdb1 /veri` ile eski hâline dönebilirsin.
-> 2. **Diski kaldırmadan görmek istiyorsan:** Altındaki verinin bulunduğu **asıl bölümü** (örn. kök dosya sistemi `/dev/sda1`), başka **boş bir dizine** geçici olarak tekrar mount edersin: `sudo mount /dev/sda1 /mnt/gecici` — böylece `/mnt/gecici/veri/notlarim.txt` yolundan, `/veri`'yi hiç bozmadan, gizli kalan dosyaya ulaşırsın. (Bu yöntem sadece `/dev/sda1` ayrı bir bölümse işe yarar; `/veri` doğrudan kök bölümdeyse ve kök zaten mount'lu haldeyse bu adım gerekmeyebilir — kökü zaten normal şekilde görürsün, sorun sadece `/veri` **üzerine başka bir şey mount'landığında** ortaya çıkar.)
->
-> Özetle: mount, veriyi **silmez**, sadece o an için **erişilemez** kılar; veriye ulaşmanın yolu ya üstteki mount'u kaldırmak ya da altındaki gerçek bölümü başka bir noktadan görmektir.
