@@ -33,10 +33,10 @@ def build_title_index(repo: Path) -> dict:
             continue
         index[f.stem] = f
     # Yeniden adlandırılan/rota değişen dosyalar için takma adlar
-    cl_readme = repo / "CL-Eğitim" / "README.md"
-    if cl_readme.exists():
-        index["00-BASLA-BURADAN"] = cl_readme
-    index.setdefault("Günlük Notlar", repo / "Eğitim" / "README.md")
+    ai_readme = repo / "AI-Egitim-Dokümanı" / "README.md"
+    if ai_readme.exists():
+        index["00-BASLA-BURADAN"] = ai_readme
+    index.setdefault("Günlük Notlar", repo / "Kamp Eğitim" / "README.md")
     index.setdefault("Linux Sistem Yönetimi Eğitimi", repo / "README.md")
     return index
 
@@ -91,7 +91,7 @@ def generate_egitim_readme(egitim_dir: Path) -> None:
         entries.append((f.name, tarih))
 
     lines = [
-        "# Eğitim — Günlük Notlar",
+        "# Kamp Eğitim — Günlük Notlar",
         "",
         "Eğitim boyunca gün gün tutulan notlar. Yeni günler eğitim ilerledikçe eklenir.",
         "",
@@ -111,7 +111,7 @@ def main() -> None:
         sys.exit(2)
 
     repo = Path(sys.argv[1]).resolve()
-    egitim_dir = repo / "Eğitim"
+    egitim_dir = repo / "Kamp Eğitim"
 
     if egitim_dir.exists():
         print("Boş gün şablonları filtreleniyor...")
@@ -129,14 +129,14 @@ def main() -> None:
         text = convert_callouts(text)
         if f.name == "00 - Eğitim Planı.md":
             text = fix_egitim_plani(text)
-        if "CL-Eğitim" in f.parts:
+        if "AI-Egitim-Dokümanı" in f.parts:
             text = fix_durum(text)
         if text != original:
             f.write_text(text, encoding="utf-8")
 
     if egitim_dir.exists():
         generate_egitim_readme(egitim_dir)
-        print("Eğitim/README.md güncellendi.")
+        print("Kamp Eğitim/README.md güncellendi.")
 
     print("Güvenlik taraması yapılıyor...")
     leaked = []

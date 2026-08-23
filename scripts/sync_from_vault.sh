@@ -8,15 +8,15 @@ VAULT="/home/umutcanpurtul/Documents/UCP/Linux Sistem Yönetimi Eğitimi"
 REPO="/home/umutcanpurtul/repos/linux-sistem-yonetimi-egitimi"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-mkdir -p "$REPO/Eğitim" "$REPO/CL-Eğitim"
+mkdir -p "$REPO/Kamp Eğitim" "$REPO/AI-Egitim-Dokümanı"
 
-echo "Günlük Notlar -> Eğitim/"
-rsync -a --delete "$VAULT/Günlük Notlar/" "$REPO/Eğitim/"
+echo "Günlük Notlar -> Kamp Eğitim/"
+rsync -a --delete "$VAULT/Günlük Notlar/" "$REPO/Kamp Eğitim/"
 
-echo "CL-Egitim -> CL-Eğitim/"
-rsync -a --delete "$VAULT/CL-Egitim/" "$REPO/CL-Eğitim/"
-if [ -f "$REPO/CL-Eğitim/00-BASLA-BURADAN.md" ]; then
-  mv "$REPO/CL-Eğitim/00-BASLA-BURADAN.md" "$REPO/CL-Eğitim/README.md"
+echo "CL-Egitim -> AI-Egitim-Dokümanı/"
+rsync -a --delete "$VAULT/CL-Egitim/" "$REPO/AI-Egitim-Dokümanı/"
+if [ -f "$REPO/AI-Egitim-Dokümanı/00-BASLA-BURADAN.md" ]; then
+  mv "$REPO/AI-Egitim-Dokümanı/00-BASLA-BURADAN.md" "$REPO/AI-Egitim-Dokümanı/README.md"
 fi
 
 echo "Kök dosyalar kopyalanıyor"

@@ -1,4 +1,4 @@
-# Eğitim — Günlük Notlar
+# Kamp Eğitim — Günlük Notlar
 
 Eğitim boyunca gün gün tutulan notlar. Yeni günler eğitim ilerledikçe eklenir.
 

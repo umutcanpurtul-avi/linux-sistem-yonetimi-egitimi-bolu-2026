@@ -5,7 +5,7 @@ tags:
 
 # Eğitim Planı — GNU/Linux Sistem Yönetimi 1. Düzey
 
-> Kaynak: `yerel eğitim materyali (repo dışı)`. İşlenen konuları aşağıda işaretleyip ilgili [Günlük Notlar](Eğitim/README.md) sayfasına bağlantı verebilirsin.
+> Kaynak: `yerel eğitim materyali (repo dışı)`. İşlenen konuları aşağıda işaretleyip ilgili [Günlük Notlar](Kamp%20Eğitim/README.md) sayfasına bağlantı verebilirsin.
 
 ## Özgür Yazılım Felsefesi ve Temel Kavramlar
 

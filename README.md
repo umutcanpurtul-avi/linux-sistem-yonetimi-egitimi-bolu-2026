@@ -12,19 +12,19 @@ Bu notlar, [Linux Kullanıcıları Derneği'nin GNU/Linux Sistem Yönetimi 1. D�
 > detaylandırılmıştır. Genişletmeler yalnızca derste zaten işlenen konuların
 > açıklamalarını derinleştirir — derste görülmeyen yeni bir konu eklenmemiştir.
 
-## 📅 Eğitim — Günlük Notlar
+## 📅 Kamp Eğitim — Günlük Notlar
 
 Eğitim boyunca gün gün tutulan notlar. Eğitim hâlâ sürüyor; her gün
 doldukça buraya eklenecek.
 
-→ [Eğitim/](./Eğitim/README.md)
+→ [Kamp Eğitim/](./Kamp%20Eğitim/README.md)
 
-## 📚 CL-Eğitim — Modül Serisi
+## 🤖 AI-Eğitim-Dokümanı — Modül Serisi
 
 "Sıfırdan Linux Ağ ve Sistem Yöneticiliği" müfredatının modül modül
 işlenmiş, uygulanabilir hali (01-15).
 
-→ [CL-Eğitim/](./CL-Eğitim/README.md)
+→ [AI-Egitim-Dokümanı/](./AI-Egitim-Dokümanı/README.md)
 
 ## 🗂️ Diğer
 
