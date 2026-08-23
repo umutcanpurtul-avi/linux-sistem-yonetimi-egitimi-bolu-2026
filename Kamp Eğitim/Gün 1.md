@@ -52,8 +52,8 @@ LS komutu üzerinden komutlara karşı bakışı detaylandırmak üzere konuşul
 
 ## Genişletilmiş Anlatım (Öğrenme İçin Ek Açıklamalar)
 
-> [!NOTE]
-> **Bu bölüm, yukarıdaki kısa notlarını silmeden, her başlığı daha ayrıntılı anlatmak için eklendi. Aynı sırayı takip ediyor.**
+> [!WARNING]
+> **Yukarıda bulunan kısa notların AI ile genişletilmiş halidir. Bilgiler sadece o gün işlenen konular ile sınırlandırılmış olup referans olması için eklenmiştir. Lütfen bu genişletilmiş metni kendi araştırmalarınıza bir ön bilgi olarak kullanın ve testlerinizi sadece burayı kullanarak değil, farklı kaynaklardan da yararlanarak yapın.**
 
 ### Temel Kavramlar
 
