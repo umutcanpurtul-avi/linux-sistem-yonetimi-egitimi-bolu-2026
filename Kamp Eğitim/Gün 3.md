@@ -9,7 +9,7 @@ konular:
   - Dosya sistemi oluşturma (mkfs), MBR/GPT
   - FHS dizin yapısı, kütüphane bağımlılıkları (ldd), /proc ve /sys
 ---
-A
+
 # Gün 3 Raporu
 
 Bağlantı: [Linux Sistem Yönetimi Eğitimi](../README.md) · [00 - Eğitim Planı](../00%20-%20Eğitim%20Planı.md) · [Gün 2](Gün%202.md)
@@ -182,6 +182,9 @@ readlink -f dosya2.txt      # o an nereye ÇÖZÜLDÜĞÜNÜ (varsa gerçek dosy
 > [!TIP]
 > **Pratik kural: Bir symlink'i sık taşımayacağın ya da hedefiyle "birlikte hareket etmesini" istediğin kısayollarda relative kullan (örn. bir proje klasörü içindeki iç referanslar — klasörü başka yere kopyaladığında da çalışmaya devam eder). Sabit, sistem geneli bir hedefe işaret ediyorsa (örn. `/usr/bin/python -> /usr/bin/python3.12`) absolute daha güvenlidir.**
 
+**Peki bu "yeniden hesaplama" tam olarak nasıl oluyor? (mekanizma)**
+Bir yolu (`/tmp/dosya2.txt` gibi) açtığında kernel bunu tek seferde çözmez — **bileşen bileşen, soldan sağa** yürür (bu işleme `path resolution`/`namei` denir): önce `/`'yi bulur, içinde `tmp`'yi arar, onun içinde `dosya2.txt`'yi arar. Her adımda "bu isim hangi inode'a işaret ediyor" diye dizin girdisine (aşağıda ayrıntısını göreceğin `dosya adı → inode numarası` eşlemesine) bakar. Yürüyüş sırasında karşılaştığı bir isim bir **symlink inode'una** işaret ediyorsa, kernel orada durup içeriği okuma yerine (çünkü symlink'in "içeriği" zaten hedef yol string'idir) **o string'i yürüyüşün ortasına ekler** ve kaldığı yerden — yani **symlink'in bulunduğu dizinden** — devam eder. `../root/dosya.txt` gibi bir hedef gördüğünde bu ekleme `/tmp` dizininin bulunduğu noktada olur, senin `cd` ile nerede durduğunla hiç ilgisi yoktur. "Relative yol symlink'in kendi konumuna göre çözülür" kuralı işte bu yüzden **kesin**dir — bu bir kural değil, path-resolution algoritmasının doğrudan sonucudur.
+
 ### Hardlink derinleştirme — bir dosyanın tüm isimlerini bulmak
 
 `ls -al` çıktısındaki izin bloğunun hemen sağındaki sayı (Gün 1'de gördüğün "link sayısı") tam olarak şunu söyler: **bu inode'a kaç farklı dizin girdisi (isim) işaret ediyor.** Hardlink oluşturduğunda bu sayı artar; bir ismi sildiğinde azalır. Sayı `0`'a düştüğünde (son isim de silindiğinde) kernel veriyi gerçekten diskten serbest bırakır.
@@ -205,6 +208,14 @@ find / -samefile dosya.txt 2>/dev/null   # aynı şeyi, inode numarasını elle 
 
 Bu yüzden dizinler arası "kısayol" ihtiyacı **symlink** ile çözülür — symlink döngü oluştursa bile (`ln -s a a`), kernel sembolik linkleri belli bir derinlikten (`ELOOP`) sonra takip etmeyi reddeder, güvenlidir.
 
+**`ln` çalıştırdığında kernel'in içinde tam olarak ne oluyor?**
+Bir dizinin "içeriği" aslında bir liste — her satırı `(isim, inode_numarası)` çifti olan bir tablo (buna **dizin girdisi / dirent** denir). `ln dosya.txt dosya4.txt` çalıştırdığında kernel:
+1. `dosya.txt`'nin hangi inode'a işaret ettiğini bulur (örn. `665533`),
+2. bulunduğun dizinin girdi listesine **yeni bir satır ekler**: `("dosya4.txt", 665533)` — hiçbir veri kopyalanmaz, sadece bir kayıt eklenir,
+3. `665533` numaralı inode'un içindeki **link sayacını (`st_nlink`)** bir artırır.
+
+`rm dosya.txt` çalıştırdığında ise bunun tersi olur: dizin listesinden `("dosya.txt", 665533)` satırı silinir ve `st_nlink` bir azaltılır — **veri bloklarına hiç dokunulmaz.** Kernel veriyi ancak `st_nlink` **VE** o inode'u açık tutan hiçbir süreç kalmadığında (open file descriptor sayısı da 0 olduğunda) gerçekten serbest bırakır. Bunun ilginç bir sonucu var: bir dosyayı `rm` ile silsen bile, o an onu açık tutan bir program (örn. bir log dosyasını yazmakta olan bir servis) varsa disk alanı **hemen boşalmaz** — `lsof | grep deleted` ile "silinmiş ama hâlâ açık" dosyaları görebilirsin, bu servisçilikte sık karşılaşılan "disk doldu ama `du` boş gösteriyor" bulmacasının klasik nedenidir.
+
 ### `mv`'nin hız sırrı — neden bazen anlık, bazen yavaş?
 
 Notundaki gerçek `stat` çıktısı bunu kanıtla gösteriyor, üzerinden gidelim:
@@ -216,6 +227,9 @@ Senin çıktında tam bunu görüyoruz: `Inode: 261482` (sdb1, cihaz `8,17`) →
 
 > [!TIP]
 > **Pratik sonuç: Aynı diskte devasa bir dosyayı taşımak "anlık" görünür (spinner beklemezsin); farklı diske/bölüme taşımak dosya boyutuna göre zaman alır — bu bir hata değil, mekanizmanın doğal sonucudur. `df -h` ile `mv` etmek istediğin iki yolun **aynı `Filesystem` sütununda** olup olmadığına bakarsan hangi durumda olduğunu önceden tahmin edebilirsin.**
+
+**Neden `rename()` "atomik" olması özellikle önemli — sadece hız değil, güvenlik meselesi de:**
+Aynı dosya sistemi içinde `rename()` çağrısı, dosya sisteminin **tek, bölünemez** bir işlemidir — ya tamamen olur ya da hiç olmaz, "yarı tamamlanmış" bir ara hâl mümkün değildir (journaled dosya sistemlerinde bu, işlemin `journal`'a tek bir kayıt olarak yazılmasıyla garanti edilir; elektrik kesilse bile disk ya eski hâlde ya yeni hâlde kalır, asla bozuk bir ortada kalmaz). Bu yüzden sunucu yazılımlarında (config dosyası güncelleme, log rotasyonu, veritabanı checkpoint'i gibi) çok bilinen bir kalıp vardır: dosyayı doğrudan üzerine yazmak yerine, **önce geçici bir dosyaya tam içerikle yaz, sonra `mv gecici.tmp hedef.conf` ile aynı dizin içinde adını değiştir.** Böylece o dosyayı okuyan başka bir süreç asla "yarı yazılmış" bir hâl görmez — ya eski tam dosyayı, ya yeni tam dosyayı görür, ikisi arası bir an bile yaşanmaz. Bunun çalışması için taşımanın **aynı dosya sistemi içinde** olması şart — farklı diske `mv` atomik değildir (yukarıda gördüğün kopyala-sil mekanizması nedeniyle), bu kalıp sadece aynı bölüm içinde güvenlidir.
 
 ### Disk aygıtı (block device) ve karakter aygıtı (character device)
 
@@ -232,6 +246,9 @@ crw--w---- 1 root tty  4, 1 ... /dev/tty1    # c = character (karakter) aygıtı
 
 **Neden önemli:** Bir dosya sistemi (ext4/xfs) sadece blok aygıtların üzerine kurulabilir — bu yüzden `mkfs.ext4 /dev/tty1` anlamsızdır ama `mkfs.ext4 /dev/sdb1` anlamlıdır. `MAJ:MIN` sütunu (örn. `8,0`), kernel'in bu aygıtı hangi sürücüyle (major) ve hangi spesifik birim olarak (minor) tanıdığını gösterir.
 
+**`/dev/sda`'yı `cat` edince ya da `mount` edince kernel'in içinde ne oluyor? (mekanizma)**
+`/dev` altındaki dosyalar, normal dosyalar gibi diskte veri bloklarına sahip **değildir** — her biri sadece iki sayı taşır: **major** ve **minor** numara. Kernel, açılışta her donanım sürücüsünü (driver) bir major numarayla **kaydeder** (`8` → SCSI/SATA disk sürücüsü, `4` → terminal sürücüsü gibi) ve bu kayıt, o sürücünün "okuma isteği geldiğinde ne yapacağını" tanımlayan bir fonksiyon tablosuyla (kernel içinde `file_operations` denen bir yapı) ilişkilendirilir. `/dev/sda`'yı açtığında VFS (Virtual File System — kernel'in tüm dosya erişimlerini yönlendiren ortak katman) bu dosyanın normal bir dosya değil bir **aygıt düğümü** olduğunu görür, `MAJ:MIN` numarasına bakarak doğru sürücünün fonksiyon tablosuna **doğrudan atlar** — yani `/dev/sda`'yı okumak, aslında disk sürücüsünün "şu sektörden şu kadar veri oku" fonksiyonunu çağırmaktır, ext4/xfs gibi bir dosya sistemi katmanı bu seviyede devrede bile değildir. `mount` komutu ise bu ham blok erişiminin **üzerine** bir dosya sistemi sürücüsünü (ext4 sürücüsü gibi) yerleştirir; ondan sonra `/veri/dosya.txt` gibi bir yol açtığında istek önce ext4 sürücüsüne gider (o da inode tablosuna bakar), ext4 sürücüsü de gerekli veriyi okumak için en altta yine blok aygıt sürücüsünü çağırır. Yani üç katman iç içedir: **VFS → dosya sistemi sürücüsü (ext4/xfs) → blok aygıt sürücüsü (SATA/NVMe) → gerçek donanım.**
+
 ### Dosya sistemi oluşturma — `mkfs`, MBR ve GPT
 
 `mkfs` (make filesystem), boş/ham bir bölümün üzerine bir dosya sistemi **iskeletini** (inode tablosu, boş blok haritası, kök dizin yapısı vb.) yazar — Gün 2'de gördüğün ext4/XFS/Btrfs farkları burada devreye girer, hangisini seçtiğine göre komut değişir:
@@ -243,6 +260,15 @@ sudo mkfs.xfs /dev/sdb1
 
 > [!WARNING]
 > **`mkfs`, hedef bölümün **tüm içeriğini geri dönüşü olmayan şekilde siler.** Doğru aygıt adını (`lsblk` ile teyit ederek) verdiğinden emin ol.**
+
+**`mkfs` çalıştığında diske gerçekte ne yazılır?**
+"Biçimlendirme" kelimesi yanıltıcı olabilir — `mkfs` bölümün **tamamını** sıfırlamaz (bu, disk boyutuna göre saatler sürerdi). Bunun yerine, dosya sisteminin **iskelet yapılarını** belirli, sabit konumlara yazar:
+- **Superblock:** Dosya sisteminin "künyesi" — blok boyutu, toplam blok/inode sayısı, dosya sistemi tipi, son mount zamanı gibi genel bilgiler. ext4'te bu bilginin **birden fazla yedek kopyası** disk boyunca serpiştirilir (superblock bozulursa yedeklerden kurtarılabilsin diye — `dumpe2fs` ile bu yedeklerin konumlarını görebilirsin).
+- **Inode tablosu:** Gün 2'de gördüğün inode yapılarının **önceden ayrılmış, sabit boyutlu** bir dizisi. Bu yüzden "toplam inode sayısı" `mkfs` anında belirlenip sabitlenir — sonradan disk dolsa bile yeni inode eklenemez.
+- **Blok grupları (ext4):** Disk, yönetilebilir küçük parçalara (block group) bölünür, her grup kendi küçük inode/boş-blok haritasına sahiptir — bu, "yakın dosyaların diskte de yakın durması" (locality) sağlayarak performansı artırır.
+- **Kök dizin girdisi:** Boş bir kök dizinin ilk hâli.
+
+Bunların dışındaki milyarlarca veri bloğuna **hiç dokunulmaz** — sadece "boş" olarak işaretlenir. Bu da şu ilginç sonucu doğurur: `mkfs` çalıştırdıktan hemen sonra, eski dosya sisteminin **verisi hâlâ fiziksel olarak diskte durur**, sadece ona giden "harita" (inode tablosu) sıfırlanmıştır — adli bilişimde (forensics) biçimlendirilmiş disklerden veri kurtarılabilmesinin temel nedeni budur.
 
 **MBR vs GPT — disk bölümleme tablosu farkı:**
 
@@ -260,23 +286,27 @@ sudo fsck /dev/sdb1        # bölüm mount'lu DEĞİLKEN çalıştır
 sudo fsck -f /dev/sdb1     # temiz görünse bile ZORLA tam denetim yap
 ```
 
-### Dizin yapısı (FHS) — hangi dizin ne işe yarar
+### Dizin yapısı (FHS) — hangi dizin ne işe yarar, ve **neden** böyle ayrılmış
 
-Linux'ta kök dizinin (`/`) altındaki klasör isimleri rastgele değil; **Filesystem Hierarchy Standard (FHS)** adlı bir kurala göre standartlaşmıştır — bu yüzden hangi dağıtımı kullanırsan kullan, `/etc` hep yapılandırma, `/var` hep değişken veri anlamına gelir:
+Linux'ta kök dizinin (`/`) altındaki klasör isimleri rastgele değil; **Filesystem Hierarchy Standard (FHS)** adlı bir kurala göre standartlaşmıştır — bu yüzden hangi dağıtımı kullanırsan kullan, `/etc` hep yapılandırma, `/var` hep değişken veri anlamına gelir. Ama asıl önemli soru "hangi dizin ne barındırır" değil, **"bu ayrım neden bu şekilde yapılmış"** — çünkü her ayrımın arkasında pratik bir sistem yönetimi gerekçesi var:
 
-| Dizin | Ne barındırır |
-|---|---|
-| `/bin`, `/usr/bin` | Temel/kullanıcı çalıştırılabilir komutları (`ls`, `cat`, `bash`...) |
-| `/sbin`, `/usr/sbin` | Sistem yönetimi komutları (genelde root gerektirir: `fdisk`, `mkfs`...) |
-| `/etc` | Sistem geneli **yapılandırma dosyaları** (`/etc/fstab`, `/etc/passwd`...) — burada çalıştırılabilir dosya olmaz, sadece config |
-| `/var` | Sık **değişen** veri: loglar (`/var/log`), önbellek, mail kuyrukları |
-| `/home` | Kullanıcıların kişisel dizinleri |
-| `/root` | root kullanıcısının ev dizini (`/home` altında değil, ayrıcalıklıdır) |
-| `/tmp` | Geçici dosyalar — genelde yeniden başlatınca temizlenir |
-| `/lib`, `/usr/lib` | Programların ihtiyaç duyduğu paylaşımlı kütüphaneler (`.so` dosyaları) |
-| `/dev` | Donanımı temsil eden aygıt dosyaları (yukarıda gördüğün `/dev/sda` gibi) |
-| `/proc`, `/sys` | Gerçek disk verisi DEĞİL — kernel'in çalışma zamanı bilgisini dosya gibi sunduğu **sanal** dosya sistemleri (aşağıda ayrı anlatıyorum) |
-| `/mnt`, `/media` | Manuel / çıkarılabilir aygıtların geçici mount noktaları |
+| Dizin | Ne barındırır | Neden ayrı/böyle tasarlanmış |
+|---|---|---|
+| `/bin`, `/sbin` | Temel komutlar (`ls`, `cat`, `bash`) / sistem yönetimi komutları (`fdisk`, `mkfs`) | **Tarihsel neden:** `/usr` eskiden ayrı, bazen açılışta geç bağlanan (hatta ağ üzerinden mount edilen) büyük bir bölümdü. Sistem henüz `/usr` bağlanmadan **kurtarma moduna** girebilmesi için, en temel komutların `/usr` olmadan da erişilebilir kök bölümde (`/bin`) durması gerekiyordu. Modern dağıtımların çoğu artık bunları birleştirdi (`usr-merge`, `/bin` artık `/usr/bin`'e symlink) ama tarihsel ayrım hâlâ komut isimlerinde/dokümanlarda yaşıyor. |
+| `/etc` | Yapılandırma dosyaları (`/etc/fstab`, `/etc/passwd`) — hiç çalıştırılabilir dosya yok | Yapılandırmanın **program kodundan ayrı tutulması**, sistemi güncellerken (paket yöneticisi `/usr` altındaki programları değiştirirken) senin özel ayarlarının ezilmemesini sağlar; ayrıca `/usr` salt-okunur/paylaşımlı bağlanabilse bile (birden fazla makine aynı `/usr`'ı paylaşabilir) her makinenin kendine özel `/etc`'si olabilir. |
+| `/var` | Sık **değişen** veri: loglar, önbellek, mail kuyrukları | Loglar/önbellek sürekli büyür — eğer bunlar kök bölümdeyse, aşırı büyüyen bir log dosyası **tüm kök dosya sistemini doldurup sistemi çökertebilir** (systemd bile başlayamaz). `/var`'ı **ayrı bir bölüm** olarak mount etmek, buradaki bir taşmanın kökü etkilemesini engeller — bu üretim sunucularında yaygın bir güvenlik/kararlılık pratiğidir. |
+| `/tmp` | Geçici dosyalar | Genelde `tmpfs` (RAM'de yaşayan bir dosya sistemi) olarak mount edilir — hem çok hızlıdır (disk I/O yok) hem de reboot'ta otomatik temizlenir, "unutulan geçici dosya" birikimini önler. |
+| `/home` | Kullanıcı dizinleri | Genelde **ayrı bir bölüm** — böylece işletim sistemini sıfırdan kurup `/` bölümünü formatlasan bile `/home` bölümüne dokunmadan kullanıcı verisi korunur. |
+| `/lib`, `/usr/lib` | Paylaşımlı kütüphaneler (`.so`) | Aynı kütüphanenin (örn. `libc`) her program için ayrı ayrı kopyalanması yerine **tek bir yerde** tutulup tüm programlarca paylaşılması — hem disk hem RAM tasarrufu (aşağıda `ldd` bölümünde mekanizması var). |
+| `/dev` | Aygıt dosyaları | Donanımı dosya sistemi arayüzüyle erişilebilir kılar (yukarıda mekanizmasını gördün) — kendisi `devtmpfs` adlı, RAM'de yaşayan bir sanal dosya sistemidir, diskte yer kaplamaz. |
+| `/proc`, `/sys` | Kernel'in çalışma zamanı bilgisi | Gerçek disk verisi DEĞİL — aşağıda ayrı bir bölümde mekanizmasını anlatıyorum. |
+| `/mnt`, `/media` | Geçici/çıkarılabilir aygıt mount noktaları | Sadece bir **kural gereği** boş dizinler — `/mnt` elle yönetim için, `/media` genelde otomatik-bağlama (USB takınca) için ayrılmıştır, teknik bir zorunluluk yok, sadece herkesin aynı yerlere bakması için ortak bir anlaşma. |
+
+> [!TIP]
+> **Bu tablodaki "ayrı bölüm olarak mount edilir" notları teoride kalmasın diye: Gün 2'de gördüğün `mount` mekanizmasını hatırla — `/var`'ı ayrı bir bölüme koymak demek, `/etc/fstab`'a bir satır ekleyip her açılışta o bölümü `/var` dizinine `mount` etmek demektir. Kavramsal olarak hiçbir şey değişmez, sadece "hangi dosyalar hangi fiziksel diskte" sorusunun cevabı değişir.**
+
+**`ls` bir dizini nasıl listeler? — bu tabloyla doğrudan ilgili bir soru**
+Yukarıdaki her dizin bir dizindir, peki `ls /etc` yazınca kernel bu listeyi **nereden** getiriyor? Bu sorunun tam mekanizma cevabını — dizinlerin aslında ne olduğunu, `ls`'in oradan tam olarak ne okuduğunu — Gün 2'nin inode bölümüne ekledim, çünkü doğrudan oradaki "dosya adı dizinde bir etikettir" fikrinin devamı: [[Gün 2#ls bir dizini listelerken gerçekte ne oluyor - mekanizma|Gün 2 → "ls bir dizini listelerken gerçekte ne oluyor?"]]
 
 ### Bir programın ihtiyaç duyduğu kütüphaneleri bulmak — `ldd`
 
@@ -296,6 +326,15 @@ LD_LIBRARY_PATH=/senin/kopya/dizinin ./program
 ```
 `LD_LIBRARY_PATH`, dinamik bağlayıcıya "önce buraya bak" der (Gün 1'de gördüğün tek-seferlik `VAR=deger komut` mantığıyla aynı — sadece o çalıştırma için geçerli, kalıcı değil). Bu teknik hem hata ayıklamada (hangi kütüphane sürümü kullanılıyor?) hem de güvenlik testlerinde (kütüphane enjeksiyonu / farklı sürüm izolasyonu) kullanılır.
 
+**Bir programı çalıştırdığında bu kütüphane arama işini gerçekte kim, ne zaman yapıyor? (mekanizma)**
+`./program` yazdığında kernel bu dosyayı doğrudan çalıştırmaz. Her çalıştırılabilir dosyanın (ELF formatında) içinde bir "yorumlayıcı" (interpreter) alanı vardır — genelde `/lib64/ld-linux-x86-64.so.2` yazar. Kernel `execve()` sistem çağrısıyla bu dosyayı işlemeye başladığında, **asıl programı değil önce bu yorumlayıcıyı** (dinamik bağlayıcı/`ld.so`) belleğe yükleyip çalıştırır. `ld.so` da şunu yapar:
+1. Programın içindeki "bana şu kütüphaneler lazım" listesini (`DT_NEEDED` girdileri — `ldd` çıktısında gördüğün liste tam olarak budur) okur,
+2. Her biri için belirli bir sırayla arama yapar: önce programın kendi içine gömülü özel yol (`RPATH`/`RUNPATH` varsa), sonra `LD_LIBRARY_PATH` ortam değişkeni, sonra sistemin önceden derlenmiş önbelleği (`/etc/ld.so.cache` — bu da `/etc/ld.so.conf`'tan `ldconfig` komutuyla üretilir), son olarak `/lib`, `/usr/lib` gibi varsayılan dizinler,
+3. Bulduğu her `.so` dosyasını belleğe eşler (`mmap`) ve programın çağırdığı fonksiyonların gerçek bellek adresini bu eşlemeye göre çözer,
+4. Her şey hazır olunca **asıl programın** kendi kodunu çalıştırmaya başlar.
+
+`ldd` komutunun kendisi ayrı, özel bir araç değildir — arka planda programı, özel bir ortam değişkeniyle (`LD_TRACE_LOADED_OBJECTS=1`) çalıştırıp `ld.so`'nun "ben şunları yükleyeceğim" diye yazdığı listeyi ekrana basmasını sağlar. Yani `ldd`, programı gerçekten baştan sona çalıştırmadan, sadece bu bağlama adımını yaptırıp durur (bu yüzden **güvenmediğin bir binary'de `ldd` çalıştırmak bazı durumlarda riskli olabilir** — çünkü teknik olarak dinamik bağlayıcı devreye girer).
+
 ### `/proc` ve `/sys` — diskte olmayan dosyalar
 
 Bu iki dizin, `ls -l` ile bakınca sıradan dosya/dizin gibi görünür ama **diskte hiçbir karşılıkları yoktur** — tamamen **kernel'in bellekte tuttuğu bilgiyi, dosya arayüzü üzerinden** sunan sanal dosya sistemleridir (`procfs`, `sysfs`). Bir dosyayı "okumak", aslında o an kernel'e "bu bilgiyi bana ver" demektir; dosya boyutları genelde `0` görünür çünkü içerik önceden diskte durmaz, **istendiğinde üretilir.**
@@ -312,6 +351,9 @@ cat /sys/class/thermal/thermal_zone0/temp   # donanım sıcaklık sensörü (var
 ```
 
 **Fark:** `/proc` daha çok **süreç (process) ve genel kernel durumu** içindir (adı da buradan gelir); `/sys` ise daha yapılandırılmış biçimde **aygıt/sürücü (device/driver)** modelini dışa vurur — `udev` gibi araçlar aygıt olaylarını (USB takıldı/çıkarıldı) `/sys` üzerinden takip eder. İkisi de root olmadan çoğunlukla **okunabilir**, bazı dosyalara yazmak (örn. `/proc/sys/...` altındaki kernel parametreleri) canlı sistemin davranışını değiştirebileceğinden dikkat ister.
+
+**`cat /proc/cpuinfo` yazınca gerçekte ne oluyor? (mekanizma)**
+Normal bir dosyada `cat`, VFS aracılığıyla dosya sistemi sürücüsüne "şu inode'un şu bloklarını oku" der, sürücü de diskten veriyi getirir. `/proc/cpuinfo`'da böyle bir "blok" yoktur — bu dosyanın arkasında kernel içindeki **bir fonksiyon** vardır. `cat` bu dosyayı `open()`+`read()` ile açtığında, VFS bu isteği normal bir disk sürücüsüne değil, `procfs` adlı **sanal dosya sistemi sürücüsüne** yönlendirir; o sürücü de "CPU bilgisini formatla ve bu buffer'a yaz" diyen kendi fonksiyonunu **o an, senin okuma isteğine cevap olarak** çalıştırır. Sonuç: her `cat /proc/cpuinfo` çalıştırışında çıktı **yeniden üretilir** (disk'ten "okunmaz", kernel'in o anki durumundan hesaplanır) — bu yüzden `stat` ile boyutuna baktığında `Size: 0` görürsün: dosyanın önceden bilinen sabit bir boyutu yoktur, çünkü içerik disk üzerinde önceden var olan bir şey değil, **istek anında üretilen** bir metindir.
 
 ## Notlar
 

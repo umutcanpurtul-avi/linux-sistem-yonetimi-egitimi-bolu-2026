@@ -187,6 +187,28 @@ ls -i dosya.txt          # dosyanın inode numarasını göster
 stat dosya.txt           # inode'daki TÜM meta veriyi ayrıntılı gör (izin, sahip, zaman damgaları, link sayısı)
 ```
 
+### ls bir dizini listelerken gerçekte ne oluyor - mekanizma
+
+Bunu biliyorsun: `ls` bir dizini listeler. Ama "listeyi nereden alıyor, bu liste nerede tutuluyor" sorusunun cevabı, yukarıdaki inode fikrinin doğrudan bir uzantısı — ve sunucu yönetiminde neden önemli olduğunu birazdan göreceksin.
+
+**Bir dizinin "içeriği" aslında nedir?**
+Bir dizin, kavramsal olarak bomboş bir kutu değildir — kendisi de **bir dosyadır**, kendi inode'u vardır, ve bu inode'un işaret ettiği veri blokları **gerçek, somut bir veri** tutar: her satırı `(dosya adı, inode numarası)` çifti olan basit bir tablo (bu tabloya **dizin girdisi / dirent** denir). `/etc` dizinini açtığında ekranda gördüğün "fstab, passwd, hostname, ..." listesi, kelimenin tam anlamıyla `/etc` inode'unun veri bloklarında duran bu tablodur — başka hiçbir yerde değil.
+
+**`ls` çalıştırdığında adım adım ne oluyor?**
+1. `ls /etc` yazdığında kernel önce `/etc`'nin hangi inode'a karşılık geldiğini (yukarıda gördüğün `namei`/path-resolution yürüyüşüyle) bulur.
+2. `ls`, bu dizini `opendir()` ile açar, sonra `readdir()` (kernel tarafında gerçek sistem çağrısı `getdents64`'tür) ile o dizinin veri bloklarındaki `(isim, inode_no)` çiftlerini **tek tek okur**. Bu adım **çok ucuzdur** — sadece bir dosyanın içeriğini okumak kadar hızlıdır, çünkü tüm dosyaların **isimlerini** almak için hiçbir başka yere bakmaya gerek yoktur.
+3. Düz `ls` burada durur — sadece isimleri ekrana basar. Ama `ls -l` (ya da `ls -al`) çalıştırdığında, ekranda gördüğün izin/sahip/boyut/tarih bilgisi **dizin girdisinde yoktur** — bunlar sadece her dosyanın **kendi inode'unda** tutulur (Gün 1'de gördüğün `-rwxr-xr-x`, sahip, boyut... hep inode alanlarıdır, dizin girdisinin değil). Bu yüzden `ls -l`, `readdir()` ile aldığı her isim için **ayrıca bir `stat()` çağrısı daha** yapmak zorundadır — yani `ls -l bir-dizin` aslında "1 kere dizini oku + N tane dosya için ayrı ayrı meta veri sorgusu yap" demektir.
+
+**Bunun pratik/sunucu yönetimi sonucu:**
+Bir dizinde **milyonlarca dosya** varsa, düz `ls` (sadece isimleri listelemek) yine hızlı kalır, ama `ls -l` **çok yavaşlar** — çünkü milyonlarca ekstra `stat()` çağrısı yapılması gerekir. Bu, "neden bazı komutlar `-l` ile bu kadar yavaşlıyor" sorusunun doğrudan cevabıdır ve büyük dizinlerle (örn. `/var/spool/`, log arşivleri) çalışırken `ls` yerine `find`'ı tercih etmenin bir nedeni de budur — `find` de aynı `readdir()` mantığını kullanır ama `-name` gibi filtrelerde gereksiz `stat()` çağrısından kaçınabilir.
+
+```bash
+strace -c ls -l /etc 2>&1 | tail -15   # ls -l'in arka planda kaç kez stat() çağırdığını GÖZLEMLE
+```
+
+> [!TIP]
+> **`strace`, bir programın kernel'e yaptığı sistem çağrılarını (syscall) canlı olarak gösteren bir araçtır — yukarıdaki örnekte `ls -l`'in `getdents64` (dizin okuma) ve çok sayıda `newfstatat`/`stat` (her dosya için meta veri) çağrısı yaptığını **gözlerinle** görebilirsin. Bu, "komut bunu nasıl yapıyor" sorusuna en somut cevabı veren araçlardan biridir — merak ettiğin herhangi bir komutta deneyebilirsin.**
+
 **Dosya sistemine göre inode kullanımı — kritik bir ayrıntı:**
 ext4 gibi dosya sistemlerinde, **toplam inode sayısı** disk `mkfs` ile biçimlendirilirken **sabitlenir** ve sonradan artırılamaz (disk boyutuna göre otomatik hesaplanır ama sabit bir sayıdır). Bunun pratik sonucu: eğer diskinde milyonlarca **küçük** dosya oluşturursan (örn. küçük önbellek/log dosyaları), disk alanı hâlâ boşken bile **inode'lar tükenebilir** — çünkü her dosya, boyutundan bağımsız olarak bir inode tüketir. Bu durumda `df -h` sana "%40 dolu" gibi bolca boş alan gösterir ama yeni dosya oluşturmaya çalıştığında "No space left on device" hatası alırsın. Gerçek nedeni görmek için:
 ```bash
@@ -247,3 +269,19 @@ sudo fdisk -l
 sudo mount /dev/sdb1 /veri
 sudo umount /veri
 ```
+
+## Sorular / Takip Edilecekler
+
+- [ ] Oluşturulan diskin içine veri ekleyip bu diski mount edersek eklenen verileri mount sonrasında gizlenecek bunu nasıl görebiliriz.
+
+> [!TIP]
+> **Ön araştırma notu (eğitmenle teyit edilmeli)**
+> Burada aslında Gün 1'de de değindiğimiz "boş dizin şartı" senaryosunun tam tersini soruyorsun; net bir örnekle açalım:
+>
+> Diyelim `/veri` dizini, kök diskin (`/dev/sda1`) sıradan bir klasörü. İçine `notlarim.txt` diye bir dosya koydun. Sonra `sudo mount /dev/sdb1 /veri` çalıştırdın (ikinci diski aynı dizine bağladın). Bu andan itibaren `/veri` içine baktığında artık `/dev/sdb1`'in içeriğini görürsün — **`notlarim.txt` görünmez olur** (silinmemiştir, sadece "altta", erişilemez durumdadır, çünkü artık o dizin ismi üzerinden başka bir dosya sistemine bakıyorsun).
+>
+> **Gizlenen veriyi görmenin iki yolu var:**
+> 1. **En basit yol — geçici olarak `umount` et:** `sudo umount /veri` çalıştırdığın an, üstteki disk kaldırılır ve altındaki eski `notlarim.txt` tekrar görünür hale gelir. İşin bitince tekrar `sudo mount /dev/sdb1 /veri` ile eski hâline dönebilirsin.
+> 2. **Diski kaldırmadan görmek istiyorsan:** Altındaki verinin bulunduğu **asıl bölümü** (örn. kök dosya sistemi `/dev/sda1`), başka **boş bir dizine** geçici olarak tekrar mount edersin: `sudo mount /dev/sda1 /mnt/gecici` — böylece `/mnt/gecici/veri/notlarim.txt` yolundan, `/veri`'yi hiç bozmadan, gizli kalan dosyaya ulaşırsın. (Bu yöntem sadece `/dev/sda1` ayrı bir bölümse işe yarar; `/veri` doğrudan kök bölümdeyse ve kök zaten mount'lu haldeyse bu adım gerekmeyebilir — kökü zaten normal şekilde görürsün, sorun sadece `/veri` **üzerine başka bir şey mount'landığında** ortaya çıkar.)
+>
+> Özetle: mount, veriyi **silmez**, sadece o an için **erişilemez** kılar; veriye ulaşmanın yolu ya üstteki mount'u kaldırmak ya da altındaki gerçek bölümü başka bir noktadan görmektir.
