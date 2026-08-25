@@ -26,6 +26,16 @@ işlenmiş, uygulanabilir hali (01-15).
 
 → [AI-Egitim-Dokümanı/](./AI-Egitim-Dokümanı/README.md)
 
+## 🧪 Pratik Challenge
+
+**Gün 1, Gün 2 ve Gün 3**'te işlenen konuların (kabuk temelleri, yol/arama/link,
+disk-mount-inode, symlink/mv/aygıtlar) uygulamalı, çözülmesi gereken bir
+challenge'ı — sorular, ipuçları, ayrı bir cevap dosyası ve görevlerin çözüleceği
+tek amaçlı sanal makineyi **çözülmemiş** haliyle kendi bilgisayarında kurmanı
+sağlayan betikler dahil.
+
+→ [Pratik Challenge/](./Pratik%20Challenge/README.md)
+
 ## 🗂️ Diğer
 
 - [Eğitim Planı (konu takip tablosu)](./00%20-%20Eğitim%20Planı.md)
