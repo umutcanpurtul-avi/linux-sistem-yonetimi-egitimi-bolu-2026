@@ -84,12 +84,6 @@ Bu yüzden `ps aux` ile `ps -ef` **benzer ama aynı olmayan** çıktılar üreti
 
 `STAT`/`S` sütunundaki kod harfleri süreç durumunu gösterir: `R` çalışıyor/çalışmaya hazır, `S` uykuda (kesintiye açık bekleme), `D` kesintiye kapalı uykuda (genelde disk I/O bekliyor — bu durumdaki süreç `kill -9` ile bile anında durdurulamaz), `T` durdurulmuş (stopped/traced), `Z` **zombi** (aşağıda ayrı başlık). Harfin yanına gelen `<`/`N`/`s`/`+`/`l` gibi ek karakterler sırasıyla yüksek öncelik, düşük öncelik (nice edilmiş), oturum lideri, ön plan grubu üyesi, çoklu-thread anlamına gelir.
 
-### Root diğer kullanıcıların süreçlerini nasıl görebilir?
-
-Bunun cevabı aslında biraz beklenmedik: **süreçlerin varlığını ve komut satırını görmek için** çoğu Linux sisteminde **root olmaya gerek bile yoktur** — `/proc` dosya sistemi varsayılan olarak her kullanıcıya sistemdeki **tüm** süreçlerin `/proc/<PID>/` dizinini (dolayısıyla `cmdline`, `stat`, `status` gibi temel bilgileri) okuma izni verir; `ps -ef` normal bir kullanıcı olarak çalıştırıldığında da tüm kullanıcıların süreçlerini listeler. Bunu isteyerek kısıtlamak için `/proc`'un **`hidepid`** mount seçeneği kullanılır (`/etc/fstab`'da `proc /proc proc defaults,hidepid=2 0 0` gibi): `hidepid=1` diğer kullanıcıların `/proc/<PID>/` içindeki hassas dosyalarını (örn. `environ`), `hidepid=2` ise dizinin **varlığını bile** normal kullanıcılardan tamamen gizler. Bu seçenek verilmediyse (`hidepid=0`, çoğu dağıtımın varsayılanı) herkes herkesin süreç listesini görür.
-
-Asıl root ayrıcalığı, **süreç hakkında hassas ek bilgilere** erişimde devreye girer — `/proc/<PID>/environ` (o sürecin ortam değişkenleri, içinde parola/token olabilir), `/proc/<PID>/fd/` (açık dosya tanımlayıcıları), `/proc/<PID>/maps` (bellek haritası) gibi dosyalar **sadece sürecin sahibi** tarafından okunabilir izinlerle oluşturulur; bunları başka bir kullanıcının süreci için okumak normalde `Permission denied` verir. Root bu noktada devreye girer: kernel, root'a (daha kesin ifadeyle `CAP_DAC_OVERRIDE`/`CAP_DAC_READ_SEARCH` **capability**'lerine sahip sürece) klasik dosya izin kontrolünü (DAC) **atlama** yetkisi tanır — root bu dosyaları izinlere bakılmaksızın okuyabilir. Ayrıca `kill`, `renice`, `strace`/`ptrace` gibi bir sürece **müdahale eden** işlemler de varsayılan olarak sadece sürecin sahibine izinlidir; root (veya `CAP_KILL`/`CAP_SYS_PTRACE` capability'sine sahip bir süreç) bu kısıtlamayı da aşabilir.
-
 ### `nice` ve `renice` — süreç önceliği
 
 Linux'un zamanlayıcısı (modern kernellerde **CFS — Completely Fair Scheduler**), CPU zamanını süreçler arasında **ağırlıklı** olarak paylaştırır; bu ağırlığı belirleyen değer **niceness**'tır. İsmi tam olarak niyetini anlatır: yüksek bir nice değeri, "diğerlerine karşı ne kadar **nazik/uysal**' olduğunu" ifade eder — yüksek nice = CPU'dan daha az pay iste (düşük öncelik), düşük (hatta negatif) nice = CPU'dan daha çok pay iste (yüksek öncelik).
@@ -316,6 +310,39 @@ Log dosyaları sınırsız büyürse diski doldurur — `logrotate`, belirli ara
 ```
 
 **Tetikleme mekanizması:** `logrotate`'in kendisi bir daemon **değildir** — sadece çalıştırıldığında kontrol yapıp gerekiyorsa rotasyon uygulayan bir **script/binary**'dir; birinin onu düzenli aralıklarla **çağırması** gerekir. Modern Debian/Ubuntu ve RHEL/Rocky'de bu artık eski `/etc/cron.daily/logrotate` girdisi yerine bir **systemd timer** (`logrotate.timer`, `OnCalendar=daily`) ile tetiklenir — yukarıdaki "servis mimarisi" bölümünde anlatılan `.timer` unit türünün gerçek bir üretim örneğidir.
+
+### Kaynaklar
+
+Genel bilgi (syscall'lar, `nice`/`kill` sinyal semantiği, zombi/`wait()` mekanizması, `ps`'in BSD/UNIX ayrımı gibi POSIX/GNU standardı davranışlar) uzun süredir sabit, iyi belgelenmiş konular olduğu için ayrıca kaynak gösterilmedi — bunlar `man 1 ps`, `man 1 nice`, `man 2 wait`, `man 7 signal` ile kendi sisteminde de doğrulanabilir. Aşağıdakiler, **dağıtımlar arası fark iddia edilen** veya kesinliğinden emin olunmayıp özellikle web'den doğrulanan noktalar için kullanılan asıl kaynaklardır:
+
+- **ABI uyumluluğu (kernel/userspace vs modül ABI):**
+  - [A 10-minute guide to the Linux ABI — Opensource.com](https://opensource.com/article/22/12/linux-abi)
+  - [Linux ABI description — The Linux Kernel documentation](https://docs.kernel.org/admin-guide/abi.html)
+  - [ABI stable symbols — The Linux Kernel documentation](https://docs.kernel.org/admin-guide/abi-stable.html)
+- **`procps-ng` paketinin `ps`/`top`/`free`/`kill` için dağıtımlar arası ortak kaynak olduğu:**
+  - [procps-ng — man pages (ManKier)](https://www.mankier.com/package/procps-ng)
+  - [procps-ng — Fedora Packages](https://packages.fedoraproject.org/pkgs/procps-ng/procps-ng/)
+- **systemd unit dosya öncelik sırası (`/etc` > `/run` > `/usr/lib`):**
+  - [systemd.unit — freedesktop.org (üst-akım systemd dokümantasyonu)](https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html)
+  - [Chapter 1. Working with systemd unit files — Red Hat Enterprise Linux 9 Documentation](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/using_systemd_unit_files_to_customize_and_optimize_your_system/assembly_working-with-systemd-unit-files_working-with-systemd)
+- **Debian 13 (trixie) usrmerge durumu / `/usr/lib/systemd/system` kanonik konumu:**
+  - [UsrMerge — Debian Wiki](https://wiki.debian.org/UsrMerge)
+  - [systemd.unit(5) — Debian trixie Manpages](https://manpages.debian.org/trixie/systemd/systemd.unit.5.en.html)
+- **journald `Storage=auto` davranışının Debian'da kalıcı, RHEL/Rocky'de volatile olması:**
+  - [journald.conf(5) — Debian testing Manpages](https://manpages.debian.org/testing/systemd/journald.conf.5.en.html)
+  - [journald.conf — freedesktop.org](https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html)
+  - [How to enable persistent logging for the systemd journal — Red Hat Customer Portal](https://access.redhat.com/solutions/696893)
+- **rsyslog'un Ubuntu 24.04'te varsayılan kurulu olması ve journald→rsyslog→`/var/log/syslog` zinciri:**
+  - [Ubuntu 24.04: rsyslog vs journald — cr0x.net](https://cr0x.net/en/ubuntu-logging-rsyslog-vs-journald/)
+- **rsyslog'un Rocky/RHEL minimal kurulumda varsayılan gelmemesi:**
+  - [Heads Up: rsyslog Not Installed on Rocky Linux Fresh Install — Virtualmin Community Forum](https://forum.virtualmin.com/t/heads-up-rsyslog-not-installed-on-rocky-linux-fresh-install/115726)
+  - [Log management — Rocky Linux Documentation](https://docs.rockylinux.org/9/books/admin_guide/17-log/)
+- **`logrotate`'in modern dağıtımlarda `cron.daily` yerine `systemd timer` ile tetiklenmesi:**
+  - [Bug 1655153 — logrotate should use systemd timer unit instead of cron.daily (Red Hat Bugzilla)](https://bugzilla.redhat.com/show_bug.cgi?id=1655153)
+  - [Bug#1052000 — logrotate systemd timer should run hourly rather than daily (Debian Bug Tracker)](https://groups.google.com/g/linux.debian.bugs.dist/c/yuW3s7eW-5E)
+
+> [!TIP]
+> **Bu liste, o an internetten çekilmiş **ikincil** kaynakları da içeriyor (forum/blog gibi) — resmi dokümantasyon (Debian/Red Hat/freedesktop.org linkleri) birincil kaynaktır, geri kalanlar pratik doğrulama amaçlı kullanıldı. Kendi VM'inde `journalctl`, `systemctl status rsyslog`, `ls -la /var/log/journal` gibi komutlarla bu iddiaları **birebir kendi sisteminde de** doğrulaman öneriliyor — yukarıdaki uyarı kutusunda da belirtildiği gibi.**
 
 ## Notlar
 
