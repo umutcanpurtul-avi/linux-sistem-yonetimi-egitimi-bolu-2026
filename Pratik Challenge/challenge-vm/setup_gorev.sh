@@ -7,10 +7,21 @@ set -euo pipefail
 cd ~
 
 SUDO_PASS="ogrenci123"
-sudo_do() { echo "$SUDO_PASS" | sudo -S -p '' "$@"; }
+# 'sudo -S' stdin'den parola okur -- ama tee/chpasswd gibi komutlara heredoc/pipe
+# ile GERCEK icerik de stdin uzerinden gecmesi gerektigi icin ikisi CARPISIR
+# (sudo -S kendi parolasini heredoc'un icerigiyle karistirip yanlis veri yazabilir).
+# Bunun yerine 'askpass' yontemi kullaniliyor: sudo parolayi AYRI bir yardimci
+# programdan alir, hedef komutun (tee/chpasswd/...) stdin'ine hic dokunmaz.
+ASKPASS_SCRIPT="/tmp/gorev_askpass.sh"
+cat > "$ASKPASS_SCRIPT" <<EOF
+#!/bin/sh
+echo "$SUDO_PASS"
+EOF
+chmod 700 "$ASKPASS_SCRIPT"
+export SUDO_ASKPASS="$ASKPASS_SCRIPT"
+sudo_do() { sudo -A "$@"; }
 
 echo "== Gerekli paketler kontrol ediliyor/kuruluyor (Bolum E/F icin) =="
-sudo_do -v
 sudo_do env DEBIAN_FRONTEND=noninteractive apt-get update -qq
 sudo_do env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq acl curl >/dev/null
 sudo_do env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xxd >/dev/null 2>&1 \
@@ -169,7 +180,7 @@ EOF
 if ! id -u yedekleme &>/dev/null; then
   sudo_do useradd -r -M -s /usr/sbin/nologin yedekleme
 fi
-sudo_do usermod -c "Yedekleme Servis Hesabi (KOD-N:1147)" yedekleme
+sudo_do usermod -c "Yedekleme Servis Hesabi (KOD-N=1147)" yedekleme
 
 sudo_do tee "$HOME/gorev/bolum-f/acl/hassas.txt" >/dev/null <<'EOF'
 KOD-O: 8402
@@ -235,6 +246,8 @@ EOF
 sudo_do systemctl daemon-reload
 sudo_do systemctl enable --now gorev-web.service
 sudo_do systemctl restart gorev-web.service
+
+rm -f "$ASKPASS_SCRIPT"
 
 echo "== Gorev ortami hazir: ~/gorev/ =="
 find ~/gorev -maxdepth 4 | sort

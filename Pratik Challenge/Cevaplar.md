@@ -266,7 +266,7 @@ tree ~/gorev/bolum-e    # çıktının en altındaki "X directories, Y files" sa
 **F1.**
 ```bash
 cat /etc/passwd | grep yedekleme
-# yedekleme:x:<uid>:<gid>:Yedekleme Servis Hesabi (KOD-N:1147):/nonexistent:/usr/sbin/nologin
+# yedekleme:x:<uid>:<gid>:Yedekleme Servis Hesabi (KOD-N=1147):/nonexistent:/usr/sbin/nologin
 ```
 
 **F2.**
