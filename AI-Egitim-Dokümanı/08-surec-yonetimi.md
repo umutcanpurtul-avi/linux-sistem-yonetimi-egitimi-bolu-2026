@@ -754,30 +754,6 @@ hem "hangi süreç hangi dosyayı açmış" hem de "hangi süreç hangi ağ port
 dinliyor" (`-i :80`) sorularına aynı araçla cevap verebilir — ikisi de
 kernel'in gözünde "açık bir dosya tanımlayıcısı"dır.
 
-**Klasik senaryo — yanlışlıkla silinen ama hâlâ açık olan dosyayı kurtarmak:**
-```bash
-lsof | grep deleted           # "hâlâ açık ama silinmiş" tüm dosyaları listele
-# ya da doğrudan sürecin fd'lerine bak:
-ls -l /proc/<PID>/fd/
-# lr-x------ 1 kullanici kullanici 64 ... 3 -> /home/kullanici/kayit.log (deleted)
-cp /proc/<PID>/fd/3 kurtarilan.log     # fd'yi normal bir dosyaymış gibi kopyala
-```
-Bunun neden mümkün olduğu, Gün 3'te gördüğün inode/link mantığının **canlı bir
-sonucudur**: `rm dosya` çalıştırdığında kernel sadece dizin girdisini
-(`isim → inode` kaydını) siler ve inode'un `st_nlink` sayacını azaltır — ama
-o inode'u **açık tutan en az bir süreç** varsa (bir dosya tanımlayıcısı/`fd`
-üzerinden), kernel'in "veriyi gerçekten sil" kuralı (`st_nlink == 0` **VE**
-açık fd sayısı == 0) henüz sağlanmamıştır, veri diskte tamamen sağlam durur —
-sadece artık hiçbir isimle **erişilemez** hâle gelmiştir. `/proc/<PID>/fd/`,
-kernel'in her sürecin o an açık tuttuğu tüm dosya tanımlayıcılarını dışa
-vurduğu yerdir; silinmiş ama hâlâ açık bir dosyanın linki, hedefi artık
-yokken bile `dosya (deleted)` etiketiyle görünmeye devam eder ve bu link,
-**isme değil doğrudan inode'a** işaret ettiği için hâlâ okunabilir/kopyalanabilir.
-Bu numara özellikle "yanlışlıkla sildiğim bir log dosyasını, onu yazan
-servis henüz kapanmadan kurtarabilir miyim" sorusunun standart cevabıdır —
-servis kapanır kapanmaz (son fd de kapanınca) veri gerçekten serbest bırakılır,
-bu pencere kapanmadan müdahale etmek gerekir.
-
 `strace`, en derin hata ayıklama seviyesidir: bir programın kernel'e yaptığı
 **her sistem çağrısını** (dosya açma, okuma, ağ bağlantısı kurma gibi
 en temel işlemleri) satır satır gösterir. Bir program "neden hiçbir şey

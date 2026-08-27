@@ -171,6 +171,9 @@ sudo vi /etc/crontab
 > unutursan, cron o sütunu komutun bir parçası (ilk kelimesi) sanır ve genelde
 > "command not found" hatası verir — çünkü `root` diye bir komut çalıştırmaya
 > çalışır.
+> crontab 
+
+
 
 ### Hazır dizinler — paket yöneticilerinin kullandığı yol
 
