@@ -3,10 +3,10 @@ tags:
   - egitim/linux-sistem-yonetimi
 tarih: 2026-08-24
 konular:
-  - Gün 1-3 Pratik Challenge cevap anahtarı
+  - Gün 1-5 Pratik Challenge cevap anahtarı
 ---
 
-# Gün 1-3 Pratik Challenge — Cevaplar
+# Gün 1-5 Pratik Challenge — Cevaplar
 
 Bağlantı: [Sorular](Sorular.md)
 
@@ -226,3 +226,99 @@ cat /proc/cpuinfo | head -5
 ls /sys/class/net/
 ```
 `/proc` ve `/sys` diskte gerçek dosyalar değil — kernel'in o anki durumunu dosya arayüzüyle sunan sanal dosya sistemleridir, bu yüzden boyutları `0` görünür.
+
+## Bölüm E
+
+**E1.**
+```bash
+tail -f ~/gorev/bolum-e/canli/kayit.log &
+# [1] 12345
+rm ~/gorev/bolum-e/canli/kayit.log
+ls -l /proc/12345/fd/
+# lr-x------ 1 ogrenci ogrenci 64 ... 3 -> /home/ogrenci/gorev/bolum-e/canli/kayit.log (deleted)
+cat /proc/12345/fd/3   # KOD-K: 7734
+kill %1
+```
+
+**E2.**
+```bash
+tar -tf ~/gorev/bolum-e/arsiv/paket.tar.xz    # gizli/rapor.txt görünür
+tar -xf ~/gorev/bolum-e/arsiv/paket.tar.xz -C ~/gorev/bolum-e/arsiv/
+cat ~/gorev/bolum-e/arsiv/gizli/rapor.txt     # KOD-L: 3312
+```
+
+**E3.**
+```bash
+cat ~/gorev/bolum-e/hex/sifreli.hex
+xxd -r -p ~/gorev/bolum-e/hex/sifreli.hex     # KOD-M: 5590
+```
+
+**E4.**
+```bash
+which tree             # boş, kurulu değil
+sudo apt update
+sudo apt install -y tree
+tree ~/gorev/bolum-e    # çıktının en altındaki "X directories, Y files" satırı — kendi ürettiğin değer
+```
+
+## Bölüm F
+
+**F1.**
+```bash
+cat /etc/passwd | grep yedekleme
+# yedekleme:x:<uid>:<gid>:Yedekleme Servis Hesabi (KOD-N:1147):/nonexistent:/usr/sbin/nologin
+```
+
+**F2.**
+```bash
+cat ~/gorev/bolum-f/acl/hassas.txt   # yine de okunabiliyor (ACL sayesinde)
+ls -l ~/gorev/bolum-f/acl/hassas.txt
+# -rw-r-----+ 1 root root ... hassas.txt   -> sondaki '+' ek ACL kuralı olduğunu gösterir
+getfacl ~/gorev/bolum-f/acl/hassas.txt
+# user:ogrenci:r--   <- klasik owner/group/other'ın dışında, sana özel tanımlanmış izin
+# KOD-O: 8402
+```
+
+**F3.**
+```bash
+ls -l ~/gorev/bolum-f/sahiplik/veri.txt   # -rw------- root root
+sudo chown ogrenci:ogrenci ~/gorev/bolum-f/sahiplik/veri.txt
+chmod 600 ~/gorev/bolum-f/sahiplik/veri.txt
+cat ~/gorev/bolum-f/sahiplik/veri.txt     # KOD-P: 2261
+```
+
+**F4.**
+```bash
+su - raportor
+# Password: raportor123
+sudo -l
+# User raportor may run: (root) NOPASSWD: /usr/local/bin/durum-raporu.sh
+sudo /usr/local/bin/durum-raporu.sh   # KOD-Q: 6650
+
+sudo whoami
+# Sorry, user raportor is not allowed to execute '/usr/bin/whoami' as root...
+sudo cat /etc/shadow
+# aynı şekilde reddedilir — sudoers kuralı yalnızca TEK bir tam komutu kapsıyor
+```
+
+**F5.**
+```bash
+diff -u ~/gorev/bolum-f/sshd/sshd_config.orig ~/gorev/bolum-f/sshd/sshd_config
+# -Port 22
+# +Port 4415   -> KOD-R: 4415
+```
+
+**F6.**
+```bash
+locate gizliyapilandirma.conf     # ilk denemede SONUÇ YOK — indeks güncel değil
+sudo updatedb
+locate gizliyapilandirma.conf     # şimdi tam yol görünür
+cat <bulunan_yol>                 # KOD-S: 7203
+```
+
+**F7.**
+```bash
+curl http://localhost:8080/gizli.txt        # KOD-T: 9981, ekrana basılır
+wget -O indirilen.txt http://localhost:8080/gizli.txt
+cat indirilen.txt                            # aynı içerik, bu sefer diskte
+```

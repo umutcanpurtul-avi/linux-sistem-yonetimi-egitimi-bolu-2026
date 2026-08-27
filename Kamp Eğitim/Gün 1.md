@@ -32,15 +32,15 @@ LS komutu üzerinden komutlara karşı bakışı detaylandırmak üzere konuşul
 	- \ işareti neden kullanılır " cd Virtual\ Box/ " örneği verildi her \ işaretikendinden sonra random bir karakter sayar boşluk varsa boşluk olarak göremez gibi
 	- ls çıktısı ve ls -al çıktısı arasında ki farklar ve çıktı içerisinde bulunan anlanların anlamları nedir?
 	-  -R = recursive kullanımı
-	-  > işareti ile çıktı yönlendirme 
+	￼-  > işareti ile çıktı yönlendirme 
 		- 0 <--- stdin
 		- 1 ---> stdout,
-		- 2 ---> stderor
+		￼- 2 ---> stderor
 			- Bu girdi ve çıktıların komutlar ile kullanımı 
 			- ls -al 1> home home5 2>dosya.txt ( Home yi listeler sonra home5 listelemeye çalışır eğer home yada home5 yoksa eror çıktısını dosya.txt dosyası içine yazar)
 			- & işsreti ile kullanmak 
 	- File komutu ile dosya hakkında bilgi alamak.
-	- | işaretinin kullanımı ve çıktı yönlendirip bir sonraki adımda kullanma
+	￼- | işaretinin kullanımı ve çıktı yönlendirip bir sonraki adımda kullanma
 		- ls --help | head -n 10 | tail -n 5  ( önneğinde olduğu gibi önce ls --help ile ls  komutu yardım bölümü alınıp head ile ilk 10 satır alınmış tail ile head dan gelen 10 satırın sadece son 5 satırı ekrana basılmış )
 	- Tail ve Head komutları işlendi
 	- pwd komutu kullanıldı

@@ -6,7 +6,7 @@ Bu klasördeki betikler, [Sorular.md](../Sorular.md) içindeki görevlerin çöz
 
 - VirtualBox 7.x
 - `sshpass` (kurulumu doğrulamak ve görev senaryosunu makineye kopyalamak için)
-- ~500MB internet (Debian netinst paketleri için)
+- ~600MB internet (Debian netinst paketleri + Bölüm E/F için `acl`/`xxd`/`plocate`/`curl` gibi ek paketler)
 - ~5-10 dakika (çoğunlukla bekleme)
 
 ## Kurulum
@@ -20,7 +20,7 @@ Script sırasıyla:
 2. `Debian-Challenge` adında yeni bir VM oluşturur (2048MB RAM, 4 CPU, 20GB birincil disk)
 3. `debian_preseed.tpl` ile tamamen otomatik (unattended), headless bir kurulum yapar
 4. Kurulum bitince VM'i kapatıp ~1.2GB **boş, biçimlendirilmemiş** bir ikinci disk ekler (Bölüm C/D'nin disk/mount görevleri için)
-5. `setup_gorev.sh`'yi makineye kopyalayıp çalıştırarak `~/gorev/` altındaki çözülmemiş görev senaryosunu kurar
+5. `setup_gorev.sh`'yi makineye kopyalayıp çalıştırarak `~/gorev/` altındaki çözülmemiş görev senaryosunu kurar — bu adım ayrıca Bölüm E/F için gereken paketleri (`acl`, `xxd`, `plocate`, `curl`) kurar, bir servis hesabı (`yedekleme`), kısıtlı-sudo'lu bir hesap (`raportor`/`raportor123`) ve `8080` portunda çalışan küçük bir web servisi (`gorev-web.service`, systemd) hazırlar
 
 ## Bağlantı
 
@@ -30,7 +30,7 @@ ssh -p 2224 ogrenci@127.0.0.1
 ```
 
 > [!NOTE]
-> **`ogrenci` / `ogrenci123`, bu challenge için üretilmiş genel bir pratik parolasıdır** — gerçek/kişisel hiçbir bilgi içermez, VM'i kendi bilgisayarında kurduğunda bu kimlik bilgileri sende de aynı olacak. Üretim ortamında asla böyle bir parola kullanma.
+> **`ogrenci` / `ogrenci123`, bu challenge için üretilmiş genel bir pratik parolasıdır** — gerçek/kişisel hiçbir bilgi içermez, VM'i kendi bilgisayarında kurduğunda bu kimlik bilgileri sende de aynı olacak. Aynı şekilde Bölüm F'deki `raportor` / `raportor123` hesabı da sadece bu görev için üretilmiştir. Üretim ortamında asla böyle parolalar kullanma.
 
 ## Sıfırdan tekrar denemek istersen
 
@@ -43,3 +43,5 @@ Sadece `~/gorev/` senaryosunu (diskler/bölümlemeler dahil değil) baştan kurm
 ```bash
 bash setup_gorev.sh
 ```
+
+`setup_gorev.sh` idempotenttir — tekrar tekrar çalıştırılabilir, her seferinde `~/gorev/` sıfırdan kurulur, kullanıcı hesapları/paketler/servis zaten varsa dokunulmadan geçilir.

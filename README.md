@@ -28,13 +28,14 @@ işlenmiş, uygulanabilir hali (01-15).
 
 ## 🧪 Pratik Challenge
 
-**Gün 1, Gün 2 ve Gün 3**'te işlenen konuların (kabuk temelleri, yol/arama/link,
-disk-mount-inode, symlink/mv/aygıtlar) uygulamalı, çözülmesi gereken bir
-challenge'ı — sorular, ipuçları, ayrı bir cevap dosyası ve görevlerin çözüleceği
-tek amaçlı sanal makineyi **çözülmemiş** haliyle kendi bilgisayarında kurmanı
-sağlayan betikler dahil.
+**Gün 1'den Gün 5'e kadar** işlenen konuların (kabuk temelleri, yol/arama/link,
+disk-mount-inode, symlink/mv/aygıtlar, silinen/açık dosya kurtarma, sıkıştırma,
+paket yönetimi, kullanıcı/grup, izinler, ACL, sudo) uygulamalı, çözülmesi
+gereken bir challenge'ı — sorular, ipuçları, ayrı bir cevap dosyası ve
+görevlerin çözüleceği tek amaçlı sanal makineyi **çözülmemiş** haliyle kendi
+bilgisayarında kurmanı sağlayan betikler dahil.
 
-→ [Pratik Challenge/](./Pratik%20Challenge/README.md)
+→ [Pratik Challenge/](./Pratik%20Challenge/Sorular.md)
 
 ## 🗂️ Diğer
 

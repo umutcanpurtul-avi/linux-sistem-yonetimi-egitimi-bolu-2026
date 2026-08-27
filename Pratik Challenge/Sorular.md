@@ -3,15 +3,15 @@ tags:
   - egitim/linux-sistem-yonetimi
 tarih: 2026-08-24
 konular:
-  - Gün 1 + Gün 2 + Gün 3 pratik tekrarı
+  - Gün 1 + Gün 2 + Gün 3 + Gün 4 + Gün 5 pratik tekrarı
 ---
 
-# Gün 1-3 Pratik Challenge
+# Gün 1-5 Pratik Challenge
 
-Bağlantı: [Linux Sistem Yönetimi Eğitimi](../README.md) · [Gün 1](../Kamp%20Eğitim/Gün%201.md) · [Gün 2](../Kamp%20Eğitim/Gün%202.md) · [Gün 3](../Kamp%20Eğitim/Gün%203.md) · Cevaplar: [Cevaplar](Cevaplar.md)
+Bağlantı: [Linux Sistem Yönetimi Eğitimi](../README.md) · [Gün 1](../Kamp%20Eğitim/Gün%201.md) · [Gün 2](../Kamp%20Eğitim/Gün%202.md) · [Gün 3](../Kamp%20Eğitim/Gün%203.md) · [Gün 4](../Kamp%20Eğitim/Gün%204.md) · [Gün 5](../Kamp%20Eğitim/Gün%205.md) · Cevaplar: [Cevaplar](Cevaplar.md)
 
 > [!WARNING]
-> **Bu challenge, sadece Gün 1, Gün 2 ve Gün 3'te **işlenen konularla sınırlıdır.** Her görevde bir **İpucu** kutusu var (küçük bir yönlendirme — hangi komut ailesine bakman gerektiğini söyler ama tam komutu vermez). Tam çözümler ayrı bir dosyada: [Cevaplar](Cevaplar.md) — önce kendin dene, sadece gerçekten takıldığında oraya bak.**
+> **Bu challenge, sadece Gün 1 ile Gün 5 arasında **işlenen konularla sınırlıdır.** Her görevde bir **İpucu** kutusu var (küçük bir yönlendirme — hangi komut ailesine bakman gerektiğini söyler ama tam komutu vermez). Tam çözümler ayrı bir dosyada: [Cevaplar](Cevaplar.md) — önce kendin dene, sadece gerçekten takıldığında oraya bak.**
 
 ## Senaryo
 
@@ -223,6 +223,91 @@ Bir dosyanın meta verisini (boyut dahil) gösteren komutu `/proc` altındaki bi
 
 ---
 
+## Bölüm E — Silinen/Açık Dosya, Sıkıştırma, ASCII/HEX, Paket Yönetimi (Gün 4)
+
+**E1.** `~/gorev/bolum-e/canli/kayit.log` dosyasını arka planda **canlı takip eden** bir süreç başlat, sonra dosyayı **sil**, sonra o sürecin hâlâ açık tuttuğu dosya tanıtıcısı üzerinden içindeki `KOD-K`'yı kurtar.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Bir dosyayı canlı takip eden komutu hatırla (`&` ile arka plana at). Sildikten sonra o sürecin PID'ini bul, `/proc/<PID>/fd/` altına bak — silinmiş ama hâlâ açık olan dosyanın linkini bulup `cat` ile okuyabilirsin.
+</details>
+
+**E2.** `~/gorev/bolum-e/arsiv/paket.tar.xz` dosyasını **açmadan önce** içindeki dosya listesini gör, sonra aç ve `gizli/rapor.txt` içindeki `KOD-L`'yi oku.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`tar`'ın açmadan sadece içeriği listeleyen bir bayrağı var. `tar` sıkıştırma formatını dosyanın imzasından kendisi anlar, ayrıca bir bayrak vermene gerek yok.
+</details>
+
+**E3.** `~/gorev/bolum-e/hex/sifreli.hex` dosyasında bir metnin **onaltılık (hex)** biçimde yazılmış hâli var. Bunu gerçek metne çevirip içindeki `KOD-M`'yi oku.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Hex'i metne çeviren, `-r` (reverse) ve `-p` (plain, offset/adres sütunu olmadan) bayraklarıyla çalışan bir araç var.
+</details>
+
+**E4.** `~/gorev/bolum-e/paket/gerekli-arac.txt` dosyasını oku — bir görev için sistemde kurulu olmayan bir araç gerekiyor. O aracı doğru paket yöneticisi komutuyla kur, sonra dosyada istenen işlemi yapıp çıkan **kendi ürettiğin değeri** (dosya/dizin sayısı) not al.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Önce `which <araç>` ile kurulu olmadığını doğrula. Kurulumdan önce paket indekslerini güncellemen gerekebilir.
+</details>
+
+---
+
+## Bölüm F — Kullanıcı/Grup, İzinler, ACL, sudo, Araçlar (Gün 5)
+
+**F1.** Sistemde daha önce açılmış bir **servis hesabı** var. Bu hesabın kullanıcı adını ve içinde `KOD-N` geçen açıklama (GECOS) alanını, doğrudan kaynağından okuyarak bul — `id`/`getent` gibi araçlar kullanmadan, dosyanın kendisine bak.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Kullanıcı bilgilerinin tutulduğu dosyayı Gün 5'te işlemiştin — 5. alan (GECOS) serbest metin içerir.
+</details>
+
+**F2.** `~/gorev/bolum-f/acl/hassas.txt` dosyasını okumayı dene. `ls -l` çıktısına göre bu senin için **imkânsız** görünüyor (owner sen değilsin, group/other izni de yok) — ama yine de okuyabiliyor musun, dene. Nasıl mümkün olduğunu bul, içindeki `KOD-O`'yu oku.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`ls -l` çıktısının izin bitlerinin **sonunda** normalde görmediğin bir işaret var mı kontrol et. O işaret varsa, klasik 9 bitin ötesinde ek bir yetkilendirme katmanı olduğunu gösterir — o katmanı gösteren ayrı bir komut var.
+</details>
+
+**F3.** `~/gorev/bolum-f/sahiplik/veri.txt` dosyasının, **senin kullanıcın tarafından** sahiplenilmiş ve sadece senin okuyup yazabildiğin (başka kimsenin dokunamadığı) bir dosya olması gerekiyordu — ama şu an öyle değil. Durumu düzelt (hem sahiplik hem izin), sonra içindeki `KOD-P`'yi oku.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Sahipliği değiştiren komut ile izni değiştiren komut ayrı ayrı iki komuttur. Sonuç izni üç haneli, sadece owner'a okuma+yazma veren bir değer olmalı.
+</details>
+
+**F4.** Sistemde `raportor` adında bir hesap var (parola: `raportor123`). O hesaba geç, `sudo` ile **nelere izinli olduğunu** keşfet, izinli olduğun komutu çalıştırıp `KOD-Q`'yu bul. Sonra `sudo whoami` ya da `sudo cat /etc/shadow` gibi tamamen farklı bir şey dene — ne oluyor, neden?
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Bir kullanıcıya tanımlı tüm sudo kurallarını listeleyen bir bayrak var (`sudo -l`). Kurallar `sudoers` dosyalarında komut bazlı tanımlanır — sadece izin verilen **tam komut** çalışır, başka hiçbir şey çalışmaz.
+</details>
+
+**F5.** `~/gorev/bolum-f/sshd/sshd_config.orig` ve `sshd_config` iki farklı sürüm. Aralarında ne değişmiş, bul — değişen satırdaki değer `KOD-R`'dir.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+İki dosya arasındaki farkı satır satır gösteren, Gün 4'te de kullandığın komutu hatırla.
+</details>
+
+**F6.** `~/gorev/bolum-f/derin/` altında, epey derin bir dizin yapısının içinde bir yapılandırma dosyası var, içinde `KOD-S` var. Dosyanın **tam yolunu bilmeden**, sadece adını bilerek bul. İlk denemende muhtemelen **hiçbir sonuç** almayacaksın — neden almadığını düşün, düzelt, tekrar dene.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Kullanacağın araç canlı tarama yapmaz, önceden çıkarılmış bir **indeks**i sorgular. İndeks güncel değilse yeni dosyalar görünmez — indeksi elle güncelleyen bir komut var.
+</details>
+
+**F7.** Bu makinede `8080` portunda çalışan bir web servisi var. Önce `curl` ile `http://localhost:8080/gizli.txt` adresinin içeriğini **ekrana bastır**, içindeki `KOD-T`'yi oku. Sonra aynı dosyayı `wget` ile, **`indirilen.txt`** adıyla diske kaydet ve kaydettiğini doğrula.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`curl` varsayılan olarak aldığı içeriği ekrana basar, dosyaya kaydetmez. `wget`'in çıktı dosyasının adını belirleyen bir bayrağı var.
+</details>
+
+---
+
 ## Bitirince
 
-Topladığın kodları (`KOD-A`'dan `KOD-J`'ye) ve Bölüm C/D'de kendi ürettiğin değerleri (UUID, inode numaraları, aygıt sayıları...) bir kenara yaz. Kontrol için: [Cevaplar](Cevaplar.md). Her bölümü bitirdikçe [Gün 1](../Kamp%20Eğitim/Gün%201.md), [Gün 2](../Kamp%20Eğitim/Gün%202.md) ve [Gün 3](../Kamp%20Eğitim/Gün%203.md) notlarındaki "Hedefler"/"Sorular" kısımlarını gözden geçir, hâlâ soru işareti kalan bir yer varsa söyle, birlikte netleştirelim.
+Topladığın kodları (`KOD-A`'dan `KOD-T`'ye) ve Bölüm C/D/E'de kendi ürettiğin değerleri (UUID, inode numaraları, aygıt sayıları, dosya/dizin sayıları...) bir kenara yaz. Kontrol için: [Cevaplar](Cevaplar.md). Her bölümü bitirdikçe [Gün 1](../Kamp%20Eğitim/Gün%201.md), [Gün 2](../Kamp%20Eğitim/Gün%202.md), [Gün 3](../Kamp%20Eğitim/Gün%203.md), [Gün 4](../Kamp%20Eğitim/Gün%204.md) ve [Gün 5](../Kamp%20Eğitim/Gün%205.md) notlarındaki "Hedefler"/"Sorular" kısımlarını gözden geçir, hâlâ soru işareti kalan bir yer varsa söyle, birlikte netleştirelim.

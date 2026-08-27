@@ -1,10 +1,28 @@
 #!/usr/bin/env bash
 # Debian-Challenge VM icinde 'ogrenci' kullanicisi olarak calistirilir.
-# ~/gorev/ altinda Gun 1-3 pratik senaryosunu hazirlar (idempotent).
+# ~/gorev/ altinda Gun 1-5 pratik senaryosunu hazirlar (idempotent).
 # Senaryo: onceki sistem yoneticisinden kalma dagimik bir ev dizini --
 # dosya adlari GERCEKCI, hicbiri gorevin cevabini ele vermiyor.
 set -euo pipefail
 cd ~
+
+SUDO_PASS="ogrenci123"
+sudo_do() { echo "$SUDO_PASS" | sudo -S -p '' "$@"; }
+
+echo "== Gerekli paketler kontrol ediliyor/kuruluyor (Bolum E/F icin) =="
+sudo_do -v
+sudo_do env DEBIAN_FRONTEND=noninteractive apt-get update -qq
+sudo_do env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq acl curl >/dev/null
+sudo_do env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xxd >/dev/null 2>&1 \
+  || sudo_do env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq vim-common >/dev/null
+sudo_do env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq plocate >/dev/null 2>&1 \
+  || sudo_do env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq mlocate >/dev/null
+# Bolum F6'nin "indeks guncel degil" ogretici anini garanti altina almak icin
+# otomatik gunluk updatedb zamanlayicisini/cron'unu kapatiyoruz -- indeks sadece
+# ogrenci elle 'sudo updatedb' calistirdiginda guncellenecek.
+sudo_do systemctl disable --now plocate-updatedb.timer >/dev/null 2>&1 || true
+sudo_do rm -f /etc/cron.daily/mlocate /etc/cron.daily/plocate 2>/dev/null || true
+
 rm -rf gorev
 mkdir -p gorev/bolum-a/yedekler gorev/bolum-a/env
 mkdir -p gorev/bolum-a/projeler/web-app gorev/bolum-a/projeler/veritabani
@@ -12,6 +30,9 @@ mkdir -p gorev/bolum-a/projeler/api-servisi/gelistirme gorev/bolum-a/projeler/ap
 mkdir -p gorev/bolum-b/loglar gorev/bolum-b/ayarlar gorev/bolum-b/depo
 mkdir -p gorev/bolum-b/config gorev/bolum-b/belge gorev/bolum-b/arsiv gorev/bolum-b/yedek
 mkdir -p gorev/bolum-d/belgeler gorev/bolum-d/masaustu gorev/bolum-d/indirilenler gorev/bolum-d/harici
+mkdir -p gorev/bolum-e/canli gorev/bolum-e/arsiv gorev/bolum-e/hex gorev/bolum-e/paket
+mkdir -p gorev/bolum-f/acl gorev/bolum-f/sahiplik gorev/bolum-f/sshd gorev/bolum-f/web
+mkdir -p gorev/bolum-f/derin/proje/arsiv/2026/yedek/kontrol/son
 
 ########## BOLUM A ##########
 echo "KOD-A: 4471" > gorev/bolum-a/yedekler/rapor_2026.txt
@@ -123,6 +144,97 @@ echo "Toplanti notlari - taslak." > gorev/bolum-d/belgeler/notlar.txt
 ln -s ../belgeler/notlar.txt gorev/bolum-d/masaustu/notlarim.txt
 ln gorev/bolum-d/belgeler/notlar.txt gorev/bolum-d/belgeler/notlar_yedek.txt
 echo "musteri,tutar,tarih" > gorev/bolum-d/indirilenler/rapor.csv
+
+########## BOLUM E (Gun 4: silinen/acik dosya, sikistirma, ASCII/HEX, paket yonetimi) ##########
+echo "Izleme kaydi basladi." > gorev/bolum-e/canli/kayit.log
+echo "KOD-K: 7734" >> gorev/bolum-e/canli/kayit.log
+
+mkdir -p /tmp/gorev-e2-build/gizli
+echo "KOD-L: 3312" > /tmp/gorev-e2-build/gizli/rapor.txt
+tar -cJf gorev/bolum-e/arsiv/paket.tar.xz -C /tmp/gorev-e2-build gizli
+rm -rf /tmp/gorev-e2-build
+
+python3 - <<'PYEOF'
+data = "KOD-M: 5590"
+with open("gorev/bolum-e/hex/sifreli.hex", "w") as f:
+    f.write(data.encode().hex() + "\n")
+PYEOF
+
+cat > gorev/bolum-e/paket/gerekli-arac.txt <<'EOF'
+Bu klasordeki dosya sayisini gormek icin 'tree' araci gerekiyor, sistemde kurulu degil.
+Kurup ~/gorev/bolum-e dizininin agacini cikar, kac dosya/dizin oldugunu not al.
+EOF
+
+########## BOLUM F (Gun 5: kullanici/grup, izinler, ACL, sudo, arac kullanimi) ##########
+if ! id -u yedekleme &>/dev/null; then
+  sudo_do useradd -r -M -s /usr/sbin/nologin yedekleme
+fi
+sudo_do usermod -c "Yedekleme Servis Hesabi (KOD-N:1147)" yedekleme
+
+sudo_do tee "$HOME/gorev/bolum-f/acl/hassas.txt" >/dev/null <<'EOF'
+KOD-O: 8402
+EOF
+sudo_do chown root:root "$HOME/gorev/bolum-f/acl/hassas.txt"
+sudo_do chmod 600 "$HOME/gorev/bolum-f/acl/hassas.txt"
+sudo_do setfacl -m u:ogrenci:r-- "$HOME/gorev/bolum-f/acl/hassas.txt"
+
+sudo_do tee "$HOME/gorev/bolum-f/sahiplik/veri.txt" >/dev/null <<'EOF'
+KOD-P: 2261
+EOF
+sudo_do chown root:root "$HOME/gorev/bolum-f/sahiplik/veri.txt"
+sudo_do chmod 600 "$HOME/gorev/bolum-f/sahiplik/veri.txt"
+
+if ! id -u raportor &>/dev/null; then
+  sudo_do useradd -m -s /bin/bash raportor
+fi
+echo "raportor:raportor123" | sudo_do chpasswd
+
+sudo_do tee /usr/local/bin/durum-raporu.sh >/dev/null <<'EOF'
+#!/bin/bash
+echo "KOD-Q: 6650"
+EOF
+sudo_do chmod 755 /usr/local/bin/durum-raporu.sh
+sudo_do chown root:root /usr/local/bin/durum-raporu.sh
+
+sudo_do tee /etc/sudoers.d/raportor >/dev/null <<'EOF'
+raportor ALL=(root) NOPASSWD: /usr/local/bin/durum-raporu.sh
+EOF
+sudo_do chmod 440 /etc/sudoers.d/raportor
+sudo_do visudo -c -f /etc/sudoers.d/raportor >/dev/null
+
+cat > gorev/bolum-f/sshd/sshd_config.orig <<'EOF'
+Port 22
+PermitRootLogin no
+PasswordAuthentication yes
+EOF
+cat > gorev/bolum-f/sshd/sshd_config <<'EOF'
+Port 4415
+PermitRootLogin no
+PasswordAuthentication yes
+EOF
+
+echo "KOD-S: 7203" > gorev/bolum-f/derin/proje/arsiv/2026/yedek/kontrol/son/gizliyapilandirma.conf
+
+echo "KOD-T: 9981" > gorev/bolum-f/web/gizli.txt
+
+sudo_do tee /etc/systemd/system/gorev-web.service >/dev/null <<EOF
+[Unit]
+Description=Gorev pratik web servisi (Bolum F)
+After=network.target
+
+[Service]
+Type=simple
+User=ogrenci
+WorkingDirectory=$HOME/gorev/bolum-f/web
+ExecStart=/usr/bin/python3 -m http.server 8080
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo_do systemctl daemon-reload
+sudo_do systemctl enable --now gorev-web.service
+sudo_do systemctl restart gorev-web.service
 
 echo "== Gorev ortami hazir: ~/gorev/ =="
 find ~/gorev -maxdepth 4 | sort
