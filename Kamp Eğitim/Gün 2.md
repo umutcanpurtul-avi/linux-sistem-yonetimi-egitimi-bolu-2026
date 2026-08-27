@@ -228,6 +228,17 @@ sudo fdisk /dev/sdb          # ETKİLEŞİMLİ mod — bölüm oluşturma/silme 
 
 `lsblk` sadece **görmek** içindir, hiçbir şeyi değiştirmez — bu yüzden çekinmeden istediğin kadar çalıştırabilirsin. `fdisk` ise (parametresiz, sadece aygıt adıyla çağrıldığında) **etkileşimli düzenleme moduna** girer; `w` (write) demeden hiçbir değişiklik diske yazılmaz, yanlış yaptıysan `q` ile kaydetmeden çıkabilirsin.
 
+### Kaynaklar
+
+`cd`/yol çözümleme, `grep`/`find`/`diff`, mount/umount mekaniği ve inode'un genel çalışma mantığı POSIX/GNU seviyesinde sabit, `man`/`stat` ile doğrudan doğrulanabilir bilgilerdir — ayrıca kaynak gösterilmedi. Dosya sistemi tablosundaki iki iddia dağıtım-spesifik/sürüm-spesifik olduğu için doğrulandı:
+
+- **XFS'in RHEL ailesinde varsayılan dosya sistemi olması (RHEL 7'den, Rocky Linux'ta 8'den itibaren):**
+  - [Managing file systems — Red Hat Enterprise Linux 9 Documentation](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/managing_file_systems/index)
+  - [XFS — Wikipedia](https://en.wikipedia.org/wiki/XFS)
+- **ext4'te toplam inode sayısının `mkfs` anında sabitlenmesi, XFS'in inode'ları dinamik ayırması:**
+  - [Why is total inodes count of XFS filesystem not constant? — Red Hat Customer Portal](https://access.redhat.com/solutions/5687161)
+  - [How To Increase Amount of Disk inodes in Linux — ma.ttias.be](https://ma.ttias.be/how-to-increase-amount-of-disk-inodes-in-linux/)
+
 ## Notlar
 
 - Bugünün ana teması: **yol (path) okuryazarlığı** (mutlak vs bağıl, `.`/`..`/`/` farkı), metin/dosya **arama araçları** (`grep` içerik, `find` dosya meta verisi), **link mekanizması** (hardlink = aynı inode'a ikinci isim, symlink = ayrı inode'lu kısayol) ve dünkü disk konusunun **inode** seviyesinde derinleşmesi.

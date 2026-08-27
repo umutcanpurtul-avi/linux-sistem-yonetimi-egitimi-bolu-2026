@@ -162,6 +162,12 @@ DEĞİŞKEN=değer komut
 ```
 Bu söz dizimi, `DEĞİŞKEN`i **sadece o tek komutun çalıştığı süreç için** ayarlar; kabuğun kendi ortamını kalıcı olarak değiştirmez (export edilmiş olsa bile o kabuktaki değeri geçici olarak o komut özelinde ezer). Komut bitince kabuktaki değer eskisi gibi kalır. Örnek: `LANG=C ls` sadece o `ls` çalışırken dil ayarını değiştirir, kalıcı export etmeden.
 
+### Kaynaklar
+
+Bu günün konuları (kabuk mekaniği, `ls -al` çıktısı, I/O yönlendirme, `export`/çevresel değişkenler) POSIX/GNU coreutils'in uzun süredir sabit, `man`/`info` ile sisteminde de doğrudan doğrulanabilir davranışlarıdır — ayrıca kaynak gösterilmedi. Dış kaynaktan alınan tek somut iddia, özgür yazılımın "dört özgürlük" tanımıdır:
+
+- **Özgür yazılımın dört özgürlüğü (freedom 0-3):** [What is Free Software? — GNU Project / Free Software Foundation](https://www.gnu.org/philosophy/free-sw.html)
+
 ## Notlar
 
 - Bugünün ana teması: Unix/GNU-Linux felsefesi ve özgür yazılımın "neden"i + kabuk (shell) ile ilk temas — özellikle `ls -al` çıktısını okuyabilmek ve I/O yönlendirmenin (`stdin`/`stdout`/`stderr`) mantığını kavramak.

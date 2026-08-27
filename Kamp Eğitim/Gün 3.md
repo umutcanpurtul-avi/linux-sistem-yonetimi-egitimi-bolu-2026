@@ -306,7 +306,7 @@ Linux'ta kök dizinin (`/`) altındaki klasör isimleri rastgele değil; **Files
 > **Bu tablodaki "ayrı bölüm olarak mount edilir" notları teoride kalmasın diye: Gün 2'de gördüğün `mount` mekanizmasını hatırla — `/var`'ı ayrı bir bölüme koymak demek, `/etc/fstab`'a bir satır ekleyip her açılışta o bölümü `/var` dizinine `mount` etmek demektir. Kavramsal olarak hiçbir şey değişmez, sadece "hangi dosyalar hangi fiziksel diskte" sorusunun cevabı değişir.**
 
 **`ls` bir dizini nasıl listeler? — bu tabloyla doğrudan ilgili bir soru**
-Yukarıdaki her dizin bir dizindir, peki `ls /etc` yazınca kernel bu listeyi **nereden** getiriyor? Bu sorunun tam mekanizma cevabını — dizinlerin aslında ne olduğunu, `ls`'in oradan tam olarak ne okuduğunu — Gün 2'nin inode bölümüne ekledim, çünkü doğrudan oradaki "dosya adı dizinde bir etikettir" fikrinin devamı: [[Gün 2#ls bir dizini listelerken gerçekte ne oluyor - mekanizma|Gün 2 → "ls bir dizini listelerken gerçekte ne oluyor?"]]
+Yukarıdaki her dizin bir dizindir, peki `ls /etc` yazınca kernel bu listeyi **nereden** getiriyor? Bu sorunun tam mekanizma cevabını — dizinlerin aslında ne olduğunu, `ls`'in oradan tam olarak ne okuduğunu — Gün 2'nin inode bölümüne ekledim, çünkü doğrudan oradaki "dosya adı dizinde bir etikettir" fikrinin devamı: [Gün 2 → "ls bir dizini listelerken gerçekte ne oluyor?"](Gün%202.md#ls-bir-dizini-listelerken-gerçekte-ne-oluyor---mekanizma)
 
 ### Bir programın ihtiyaç duyduğu kütüphaneleri bulmak — `ldd`
 
@@ -351,6 +351,16 @@ cat /sys/class/thermal/thermal_zone0/temp   # donanım sıcaklık sensörü (var
 ```
 
 **Fark:** `/proc` daha çok **süreç (process) ve genel kernel durumu** içindir (adı da buradan gelir); `/sys` ise daha yapılandırılmış biçimde **aygıt/sürücü (device/driver)** modelini dışa vurur — `udev` gibi araçlar aygıt olaylarını (USB takıldı/çıkarıldı) `/sys` üzerinden takip eder. İkisi de root olmadan çoğunlukla **okunabilir**, bazı dosyalara yazmak (örn. `/proc/sys/...` altındaki kernel parametreleri) canlı sistemin davranışını değiştirebileceğinden dikkat ister.
+
+### Kaynaklar
+
+Path-resolution/symlink çözünürlüğü, hardlink/inode mekaniği, `mv`'nin `rename()` atomikliği, block/character device ayrımı ve `/proc`-`/sys` sanal dosya sistemi mantığı, kernel'in `namei`/VFS davranışının doğrudan sonucu olan, `man 7 path_resolution`/`man 2 rename`/`man 5 proc` ile doğrulanabilir genel bilgilerdir — ayrıca kaynak gösterilmedi. MBR/GPT sayısal sınırları sürüm/standart-spesifik olduğu için doğrulandı (aşağıdakiler ikincil/derleme kaynaklardır, birincil MBR/GPT spesifikasyonuyla karşılaştırmalı okunması önerilir):
+
+- **MBR: 32-bit LBA nedeniyle ~2TB disk sınırı, en fazla 4 birincil bölüm; GPT: 128'e kadar bölüm, tablo yedekli (başta+sonda) ve CRC32 ile bütünlük doğrulamalı:**
+  - [MBR VS GPT, which is the best choice for your computer? — DiskGenius](https://www.diskgenius.com/how-to/mbr-vs-gpt.php)
+  - [MBR vs GPT: Partitioning Key Differences — SynchroNet](https://synchronet.net/mbr-vs-gpt/)
+
+`/bin`'in tarihsel olarak `/usr`'dan ayrı tutulma nedeni ve modern dağıtımlarda `usr-merge` ile birleşmesi ise Gün 6'da (systemd unit dizinleri bağlamında) ayrıca doğrulandı — bkz. [Gün 6 → Kaynaklar](Gün%206.md#kaynaklar) (Debian Wiki UsrMerge sayfası).
 
 **`cat /proc/cpuinfo` yazınca gerçekte ne oluyor? (mekanizma)**
 Normal bir dosyada `cat`, VFS aracılığıyla dosya sistemi sürücüsüne "şu inode'un şu bloklarını oku" der, sürücü de diskten veriyi getirir. `/proc/cpuinfo`'da böyle bir "blok" yoktur — bu dosyanın arkasında kernel içindeki **bir fonksiyon** vardır. `cat` bu dosyayı `open()`+`read()` ile açtığında, VFS bu isteği normal bir disk sürücüsüne değil, `procfs` adlı **sanal dosya sistemi sürücüsüne** yönlendirir; o sürücü de "CPU bilgisini formatla ve bu buffer'a yaz" diyen kendi fonksiyonunu **o an, senin okuma isteğine cevap olarak** çalıştırır. Sonuç: her `cat /proc/cpuinfo` çalıştırışında çıktı **yeniden üretilir** (disk'ten "okunmaz", kernel'in o anki durumundan hesaplanır) — bu yüzden `stat` ile boyutuna baktığında `Size: 0` görürsün: dosyanın önceden bilinen sabit bir boyutu yoktur, çünkü içerik disk üzerinde önceden var olan bir şey değil, **istek anında üretilen** bir metindir.

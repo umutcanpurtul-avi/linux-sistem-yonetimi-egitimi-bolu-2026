@@ -403,6 +403,16 @@ Sorry, user ege is not allowed to execute '/usr/bin/rnano /etc/passwd' as root o
 
 Beklenen tam olarak gerçekleşmiş: `sudo rnano /etc/wgetrc` sessizce (parola sormadan, `NOPASSWD` sayesinde) çalışmış; hem yanlış komut (`nano`) hem yanlış dosya (`/etc/passwd`) denemeleri reddedilmiş — sudoers'ın **komut + argüman birlikte tam eşleşme** kuralı iki farklı senaryoda da doğru çalıştığını kanıtlıyor.
 
+### Kaynaklar
+
+`/etc/passwd`/`/etc/shadow`/`/etc/group` alan yapısı, `chmod`/`chown`/ACL mekaniği, `sudo`/`su` farkı ve `sudoers` sözdizimi `man 5 passwd`/`man 5 shadow`/`man 5 sudoers`/`man 1 setfacl` ile doğrudan doğrulanabilir genel bilgilerdir — ayrıca kaynak gösterilmedi. Dağıtım-spesifik olan tek iddia MAC sisteminin hangi ailede varsayılan olduğudur:
+
+- **SELinux'ün RHEL/Fedora/Rocky/AlmaLinux'ta, AppArmor'ın Debian (10'dan itibaren)/Ubuntu'da varsayılan olması:**
+  - [AppArmor vs SELinux: Compare the Differences in Linux Security — TuxCare](https://tuxcare.com/blog/selinux-vs-apparmor/)
+
+> [!TIP]
+> **Bu tek kaynak ikincil (blog) niteliğinde — kendi sisteminde `getenforce`/`aa-status` ile doğrulaman, ya da dağıtımının resmi release notlarına bakman daha güvenilir olur.**
+
 ### Uygulamalı Örnek 2 — umask ile varsayılan 666 izin (2. ödevin çözümü)
 
 Dosyaların varsayılan izni **umask** değeriyle belirlenir. `chmod`/ACL, **mevcut** bir dosyanın iznini sonradan değiştirmeye yarar; `umask` ise **yeni oluşturulan her dosyanın hangi izinle doğacağını** belirler.

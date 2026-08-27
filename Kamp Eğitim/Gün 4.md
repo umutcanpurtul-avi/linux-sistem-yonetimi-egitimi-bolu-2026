@@ -172,6 +172,13 @@ apt show paket_adi                 # bir paketin bağımlılıkları/açıklamas
 apt list --installed               # sistemde kurulu tüm paketleri listele
 ```
 
+### Kaynaklar
+
+`/proc/<pid>/fd/` ile silinmiş-ama-açık dosya kurtarma, `tar`/`gzip`/`xz` mekaniği ve ASCII/HEX ilişkisi, `man 5 proc`/`man 1 tar`/`man 1 xxd` ile doğrudan doğrulanabilir genel bilgilerdir — ayrıca kaynak gösterilmedi. `.deb` paket formatının iç yapısı resmi bir format tanımı olduğu için doğrulandı:
+
+- **`.deb` dosyasının `ar` arşivi olduğu, sırasıyla `debian-binary` + `control.tar` + `data.tar` üyelerini içerdiği:**
+  - [deb(5) — Debian binary package format, man7.org (Linux man-pages projesi, resmi)](https://man7.org/linux/man-pages/man5/deb.5.html)
+
 ## Notlar
 
 - Bugünün ana teması: dün öğrendiğin "inode'a bağlı süreç" fikrinin **canlı bir kurtarma senaryosuna** dönüşmesi (`/proc/<pid>/fd/`), sıkıştırma ile arşivlemenin **birbirinden bağımsız iki katman** olduğu (`tar` paketler, `gzip`/`xz` sıkıştırır), ASCII (kodlama) ile HEX'in (sayı tabanı) hiç kıyaslanabilir iki şey olmadığı, ve paket yöneticisinin aslında sadece "dosyaları doğru yere kopyalayıp bir veritabanına kaydeden" nispeten basit bir mekanizma olduğu.
