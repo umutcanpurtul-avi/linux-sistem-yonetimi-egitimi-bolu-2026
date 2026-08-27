@@ -364,6 +364,116 @@ normal dosyalara vermez. `chmod -R 755` yaparsan tüm `.html` dosyaları da
 > zaten "içine girebilme" anlamına geldiği için her zaman gerekli) `x` ekler; düz
 > veri dosyalarına (resim, metin, PHP kaynak kodu) dokunmaz.
 
+### ACL — klasik `rwx`'in ötesine geçmek
+
+> [!NOTE]
+> **ACL neden var, `chmod` yetmiyor mu?**
+> Klasik izin modelinin temel bir kısıtı var: bir dosyaya **tam olarak bir**
+> sahip ve **tam olarak bir** grup tanımlayabilirsin. "Bu dosyayı sahibi
+> dışında **başka belirli bir kullanıcıya da** yazma izni ver, ama geri kalan
+> herkese kapalı kalsın" gibi bir isteği klasik `rwx` ile karşılayamazsın —
+> tek çözümün o kullanıcıyı bir gruba eklemek olurdu, ki bu da gruptaki
+> **diğer tüm dosyalara** da erişim açar, istenmeyen bir yan etkidir. **ACL
+> (Access Control List)**, klasik üç sınıfın (sahip/grup/diğer) üzerine
+> istediğin sayıda **ek kullanıcı/grup kuralı** ekleyebilmeni sağlar.
+
+```bash
+getfacl dosya.txt                         # dosyanın tüm ACL girdilerini göster
+setfacl -m u:ali:rwx dosya.txt            # kullanıcı 'ali'ye özel olarak rwx ver (-m = modify)
+setfacl -m g:muhasebe:rx dosya.txt        # 'muhasebe' grubuna özel olarak rx ver
+setfacl -x u:ali dosya.txt                # ali'nin özel kuralını kaldır (-x = remove entry)
+setfacl -b dosya.txt                      # dosyadaki TÜM ACL girdilerini temizle (-b = remove all)
+
+setfacl -d -m u:ali:rwx dizin/            # -d = "default" ACL: dizinin ALTINDA
+                                           # yeni oluşan her dosya/alt dizin bu kuralı
+                                           # OTOMATİK devralır (miras)
+setfacl -R -m u:ali:rwx dizin/            # -R = özyinelemeli, mevcut tüm içeriğe uygula
+```
+
+`ls -l` çıktısında izin bitlerinin sonunda bir **`+`** işareti görürsen
+(`rwxr-x---+` gibi), o dosyada klasik 9 bitin **ötesinde** ek ACL kuralları
+olduğunun işaretidir — detayını `getfacl` ile görürsün:
+
+```
+# file: dosya.txt
+# owner: root
+# group: root
+user::rw-
+user:ali:r--          ← klasik modelde YOK olan, ACL'nin eklediği özel kural
+group::---
+mask::r--
+other::---
+```
+
+> [!WARNING]
+> **`mask` girdisi kolayca unutulur**
+> ACL'de ayrı bir **mask** girdisi vardır: ek kullanıcı/grup kurallarının
+> **üst sınırını** belirler — bir kuralda `rwx` yazsa bile mask `r--` ise
+> etkin izin `r--`'a düşer. `chmod g=...` komutunu ACL'li bir dosyada
+> çalıştırdığında, bu aslında `mask`'ı değiştirir (klasik `group` bitini
+> değil) — bu yüzden ACL eklediğin bir dosyada beklenmedik şekilde izinlerin
+> "işe yaramadığını" görürsen ilk bakılacak yer `getfacl` çıktısındaki
+> `mask::` satırıdır.
+
+> **Dağıtım farkı:** `acl` paketi çoğu minimal kurulumda gelmez —
+> `sudo dnf install acl` (RHEL) / `sudo apt install acl` (Debian) gerekebilir.
+> Ayrıca dosya sisteminin ACL desteğiyle `mount` edilmiş olması gerekir
+> (`mount -o acl` — modern ext4/xfs varsayılan olarak zaten destekler).
+
+### Zorunlu erişim kontrolü (MAC) — SELinux ve AppArmor
+
+> [!NOTE]
+> **Buraya kadar gördüğün her şey neden "yetersiz" kalabiliyor?**
+> `chmod`, `chown` ve az önceki ACL, hepsi **DAC (Discretionary Access
+> Control — isteğe bağlı erişim kontrolü)** kategorisindedir: dosyanın
+> **sahibi** (ya da root) izinleri istediği gibi belirler/değiştirir, hiçbir
+> merkezi otorite buna itiraz edemez. **MAC (Mandatory Access Control —
+> zorunlu erişim kontrolü)** bunun üstüne, sahibin isteğinden **bağımsız**,
+> sistem çapında merkezi bir politika ekler — root olsan bile MAC politikası
+> izin vermiyorsa o işlemi yapamazsın. Amaç: bir servis (örn. web sunucusu)
+> ele geçirilse bile, MAC politikası o sürecin **sadece** kendi ait olduğu
+> dosyalara dokunabilmesini garanti eder — DAC'ın "her şeyi tek bir sahip
+> kararına bırakma" zafiyetini kapatır.
+
+| | **SELinux** | **AppArmor** |
+|---|---|---|
+| Yaklaşım | **Etiket (label) tabanlı** — her dosyaya/sürece bir context atanır | **Yol (path) tabanlı** — her uygulama için ayrı profil dosyası |
+| Varsayılan dağıtım | RHEL / Fedora / Rocky / Alma | Debian / Ubuntu |
+| Güç / karmaşıklık | Çok granüler, politika yazımı/hata ayıklaması zor | Daha basit, insan-okunur profil, öğrenmesi kolay |
+
+**SELinux**, her dosyaya ve her sürece bir **context** (`kullanici:rol:tip:seviye`)
+atar; politika, hangi **tip**in hangi **tip**le nasıl etkileşebileceğini
+tanımlar (örn. `httpd_t` tipi süreç sadece `httpd_sys_content_t` etiketli
+dosyaları okuyabilir — bu yüzden bir web sitesinin dosyalarını "yanlış"
+bir dizine koyup doğru `chmod`'u versen bile, SELinux etiketi yanlışsa
+Apache o dosyayı yine de okuyamaz, `Permission denied` alırsın).
+
+```bash
+getenforce            # Enforcing / Permissive / Disabled durumunu göster
+sudo setenforce 0       # geçici olarak Permissive moda al (engellemez, sadece loglar)
+ls -Z dosya             # dosyanın SELinux context'ini göster
+ausearch -m avc -ts recent   # son reddedilen (denied) işlemleri gör
+```
+
+**AppArmor**, her uygulama için ayrı, insan tarafından okunabilir bir
+**profil** dosyası (`/etc/apparmor.d/` altında) hangi dosya yollarına hangi
+izinlerle erişebileceğini listeler.
+
+```bash
+sudo aa-status              # hangi profillerin yüklü/enforce/complain modda olduğunu göster
+sudo aa-complain /path/prog  # bir profili "complain" moduna al — sadece loglar, engellemez
+sudo aa-enforce /path/prog   # profili tekrar zorlayıcı (enforce) moda al
+```
+
+> [!TIP]
+> **Bir "Permission denied" hatası aldığında ve `ls -l`/ACL tarafında**
+> hiçbir sorun görünmüyorsa, bir sonraki şüpheli her zaman SELinux/AppArmor
+> olmalıdır (`getenforce` ya da `aa-status` ile hemen kontrol edilir). Bu
+> ikisi de aynı anda tek sistemde çalışmaz — dağıtım ailesine göre biri
+> etkindir; üretim sisteminde `setenforce 0`/`aa-complain` sadece **geçici
+> hata ayıklama** için kullanılır, kalıcı çözüm doğru politika/profili
+> yazmaktır — MAC'i tamamen kapatmak, onun sağladığı korumayı da kapatır.
+
 ---
 
 ## 4. Özel izin bitleri: SUID, SGID, Sticky

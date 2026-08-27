@@ -389,6 +389,41 @@ join a.txt b.txt               # Ortak alana göre birleştir (SQL JOIN gibi)
 split -l 1000 buyuk.log parca_ # 1000'er satırlık parçalara böl
 ```
 
+### diff — iki dosyayı karşılaştırma
+
+```bash
+diff eski.conf yeni.conf         # varsayılan format
+diff -u eski.conf yeni.conf      # "unified" format — patch/git'in kullandığı standart
+diff -r dizin1/ dizin2/          # iki dizini özyinelemeli karşılaştır
+diff -q dizin1/ dizin2/          # sadece HANGİ dosyaların farklı olduğunu söyle
+```
+`diff`'in varsayılan çıktısında `<` ile başlayan satır **sadece ilk dosyada**,
+`>` ile başlayan satır **sadece ikinci dosyada** vardır. `-u` (unified) bunun
+yerine değişen satırların **etrafındaki birkaç bağlam satırıyla birlikte**,
+silinenleri `-`, eklenenleri `+` ile gösteren, çok daha okunaklı bir format
+üretir — `git diff` ve `patch` komutunun beklediği format tam olarak budur.
+Çıktı **hiç basılmadan** çıkarsa (çıkış kodu `0`) iki dosya birebir aynıdır;
+bu bir betikte kontrol amaçlı kullanılabilir: `diff -q a b >/dev/null && echo aynı`.
+
+### xxd — ikilik veriyi onaltılık (hex) döküm olarak görmek
+
+```bash
+xxd dosya                  # her baytı hex + yanında ASCII karşılığıyla göster
+xxd -p dosya                # "plain" — sadece art arda hex çiftleri, adres/ASCII sütunu yok
+echo -n "A" | xxd           # 00000000: 41   ← 'A' harfinin ASCII kodu, hex olarak
+xxd -r -p sifreli.hex        # -r (reverse) + -p: hex metni GERİ, ham baytlara çevir
+```
+Bir dosyayı `cat` ile açtığında terminal, baytları **karakter kodlama tablosuna**
+(ASCII/UTF-8) göre insan-okunur harflere çevirip gösterir — ama ikili (binary)
+bir dosyada (bir resim, bir derlenmiş program) bu baytların çoğu yazdırılabilir
+bir karaktere karşılık gelmez, terminalde anlamsız/bozuk semboller çıkar. `xxd`,
+her baytı olduğu gibi, **onaltılık (hex) tabanda** iki karakterle (`0x00`-`0xFF`)
+gösterir — 2 hex hanesi tam olarak 1 bayta karşılık geldiği için bu, ham veriyi
+kaybetmeden okunabilir kılmanın en kompakt yoludur. `-p` (plain) adres ve ASCII
+sütunlarını atıp sadece art arda hex çiftlerini basar — bu format `-r` (reverse)
+ile geri okunabilir, yani `xxd -p` ile ürettiğin bir hex metni `xxd -r -p` ile
+tekrar orijinal baytlara çevrilebilir; iki komut birbirinin tam tersidir.
+
 **Klasik kombinasyon** — en çok yer kaplayan 5 log dosyası:
 ```bash
 du -a /var/log | sort -rn | head -5
@@ -541,6 +576,59 @@ sudo systemctl reboot            # systemd karşılığı
 `poweroff` yerine gecikmeli kapatma, o an sistemde oturum açmış diğer kullanıcılara
 (bağlı SSH oturumları, çalışan işlemler) hazırlanma süresi tanır ve terminallerine
 uyarı mesajı basar.
+
+---
+
+## 8. curl ve wget — ağdan dosya/veri çekme
+
+`curl` ve `wget` ikisi de HTTP(S)/FTP üzerinden veri çeker ama tasarım
+amaçları farklıdır. **`wget`**, **dosya indirmek** için tasarlanmıştır —
+varsayılan davranışı aldığı içeriği doğrudan **diske kaydetmektir**, ve bir
+siteyi bütünüyle (bağlantılarını takip ederek) indirmek gibi işlerde
+güçlüdür. **`curl`** çok daha genel amaçlı bir veri transfer aracıdır — çok
+daha fazla protokolü destekler ve varsayılan olarak aldığı içeriği **ekrana
+(stdout) basar**, dosyaya değil — bu onu script'lerde, bir API'yle
+(REST çağrıları, özel header/method/body ile) konuşurken kullanmaya uygun
+hale getirir.
+
+```bash
+curl -O https://site.com/dosya.tar.gz   # -O: uzak dosyanın adıyla KAYDET
+curl -o yerel-ad.tar.gz https://...     # -o: özel bir isimle kaydet
+curl -L https://kisa.link/x              # -L: yönlendirmeleri (redirect) TAKİP ET
+curl -I https://site.com                 # -I: sadece HTTP header'ları al (HEAD isteği)
+curl -s https://site.com                 # -s: sessiz — ilerleme çubuğunu gizle
+curl -v https://site.com                 # -v: verbose — istek/yanıt detaylarını göster
+
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"kullanici":"ali"}' https://api.site.com/giris
+#    -X: HTTP metodu   -H: özel header   -d: gönderilecek veri (POST body)
+```
+
+> [!NOTE]
+> **`curl -O` ile `curl -o` arasındaki fark**
+> Büyük `-O` (remote name), sunucudan gelen dosya adını **olduğu gibi** kullanarak
+> diske kaydeder — URL'nin sonundaki dosya adını sen tekrar yazmak zorunda kalmazsın.
+> Küçük `-o` ise **senin belirlediğin** bir isimle kaydeder; URL'nin adı ile senin
+> istediğin dosya adı farklıysa (ya da URL'de anlamlı bir dosya adı yoksa,
+> API çağrılarında olduğu gibi) bunu kullanırsın.
+
+```bash
+wget https://site.com/dosya.iso          # varsayılan: uzak dosya adıyla diske kaydet
+wget -O ozel-ad.iso https://...          # -O: özel bir isimle kaydet (curl'ün -o'suna denk)
+wget -c https://.../buyuk-dosya.iso      # -c: yarım kalan indirmeye KALDIĞI YERDEN devam et
+wget -r -np https://site.com/dizin/      # -r: özyinelemeli indir, -np: üst dizinlere ÇIKMA
+wget -q https://site.com/dosya           # -q: sessiz
+```
+
+> [!TIP]
+> **Hangisini ne zaman kullanmalısın?**
+> "Bu URL'deki dosyayı diske indir" gibi basit bir iş için `wget` genelde daha
+> az yazım gerektirir (varsayılanı zaten kaydetmektir) ve kesilen büyük
+> indirmeleri `-c` ile kaldığı yerden sürdürmede güçlüdür. Bir API'yle konuşmak,
+> özel header/method/body göndermek, ya da yanıtı doğrudan bir sonraki komuta
+> (`| jq`, `| grep` gibi) `pipe` etmek istiyorsan `curl` doğru araçtır — çünkü
+> çıktıyı varsayılan olarak stdout'a basar, bir ara dosyaya yazıp sonra onu
+> okumana gerek kalmaz.
 
 ---
 

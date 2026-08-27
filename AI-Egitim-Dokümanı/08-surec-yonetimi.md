@@ -656,6 +656,60 @@ neden systemd unit'i olarak yönetilmesi gerektiğinin ana sebebidir.
 > Cron: RHEL'de `crond`, Debian'da `cron`. `systemctl list-units | grep -i ara`
 > ile doğru adı bul.
 
+### Var olan bir servisi düzenlemek — `systemctl edit`
+
+> [!NOTE]
+> **Neden `vi /etc/systemd/system/sshd.service` YAZMAMALISIN**
+> `sshd` gibi paketle (rpm/deb) gelen bir servisin unit dosyası, paket
+> yöneticisi tarafından yönetilir — genelde `/usr/lib/systemd/system/` (ya da
+> `/lib/systemd/system/`) altında durur. Bu dosyayı doğrudan düzenlersen iki
+> sorun çıkar: (1) paket bir sonraki güncellemede o dosyanın **üzerine
+> yazar**, senin değişikliğin sessizce kaybolur; (2) tüm dosyayı elle kopyalayıp
+> `/etc/systemd/system/` altına aynı adla koyarsan (bir "override" numarası),
+> bu sefer paket güncellemesi yeni varsayılanları (yeni bir `ExecStart`
+> parametresi, yeni bir güvenlik ayarı gibi) eklese bile **senin donmuş
+> kopyan** hâlâ eskisini kullanır — güncellemeler seni hiç etkilemez, ki bu
+> da fark edilmesi zor bir başka sorun kaynağıdır.
+
+```bash
+sudo systemctl edit sshd
+```
+Bu komut, `sshd.service`'in **tamamını** değil, sadece senin **eklemek/geçersiz
+kılmak istediğin satırları** yazacağın boş bir editör açar (varsayılan `EDITOR`
+neyse — `vi`, `nano`). Kaydettiğinde bunu doğrudan orijinal dosyaya değil,
+`/etc/systemd/system/sshd.service.d/override.conf` diye ayrı, küçük bir
+**drop-in (ek) dosyaya** yazar. Örnek:
+```ini
+[Service]
+ExecStartPre=/usr/local/bin/baglanti-kontrol.sh
+```
+Bu, sadece `ExecStartPre` satırını **ekler**, dosyanın geri kalanına
+(orijinal `ExecStart`, `After`, her şey) hiç dokunmaz — systemd, servisi
+başlatırken önce orijinal unit dosyasını, sonra bu `.d/` dizinindeki drop-in
+dosyalarını **üstüne bindirerek (katman katman)** birleştirir. Paket
+güncellendiğinde orijinal dosya değişse bile senin küçük override'ın ayrı
+durduğu için kaybolmaz ve orijinaldeki yeni değişikliklerle **birlikte**
+uygulanmaya devam eder.
+
+```bash
+systemctl cat sshd            # ⭐ orijinal + TÜM override'ların birleşmiş halini göster
+sudo systemctl edit --full sshd   # tüm unit dosyasının TAM bir kopyasını düzenlemene izin ver
+sudo systemctl revert sshd        # senin eklediğin TÜM override'ları kaldır, orijinale dön
+sudo systemctl daemon-reload      # (edit komutu bunu genelde otomatik yapar, garantisi yok say)
+sudo systemctl restart sshd
+```
+
+> [!TIP]
+> **`systemctl edit` (bayraksız) her zaman güvenli, **ek** bir katmandır**
+> — tercih edilen yöntem budur. `--full` bayrağı, drop-in yerine dosyanın
+> **tam bir kopyasını** `/etc/systemd/system/` altına koyup düzenletir; bu,
+> yukarıdaki "güncellemeler seni etkilemez" sorununu geri getirir, bu yüzden
+> sadece gerçekten dosyanın **her satırını** değiştirmen gerektiğinde
+> (nadiren) kullanılmalıdır. `systemctl revert`, senin eklediğin drop-in
+> dosyasını (ve `--full` ile oluşturduğun tam kopyayı) siler, servisi paketin
+> orijinal hâline döndürür — "bu değişikliği kim, ne zaman yaptı" karmaşasına
+> düşmeden geri almanın en temiz yoludur.
+
 ### Kaynak sınırlama (cgroups)
 
 ```bash
@@ -699,6 +753,30 @@ soketleri, aygıtlar, hatta bazı süreçler arası iletişim kanalları da bire
 hem "hangi süreç hangi dosyayı açmış" hem de "hangi süreç hangi ağ portunu
 dinliyor" (`-i :80`) sorularına aynı araçla cevap verebilir — ikisi de
 kernel'in gözünde "açık bir dosya tanımlayıcısı"dır.
+
+**Klasik senaryo — yanlışlıkla silinen ama hâlâ açık olan dosyayı kurtarmak:**
+```bash
+lsof | grep deleted           # "hâlâ açık ama silinmiş" tüm dosyaları listele
+# ya da doğrudan sürecin fd'lerine bak:
+ls -l /proc/<PID>/fd/
+# lr-x------ 1 kullanici kullanici 64 ... 3 -> /home/kullanici/kayit.log (deleted)
+cp /proc/<PID>/fd/3 kurtarilan.log     # fd'yi normal bir dosyaymış gibi kopyala
+```
+Bunun neden mümkün olduğu, Gün 3'te gördüğün inode/link mantığının **canlı bir
+sonucudur**: `rm dosya` çalıştırdığında kernel sadece dizin girdisini
+(`isim → inode` kaydını) siler ve inode'un `st_nlink` sayacını azaltır — ama
+o inode'u **açık tutan en az bir süreç** varsa (bir dosya tanımlayıcısı/`fd`
+üzerinden), kernel'in "veriyi gerçekten sil" kuralı (`st_nlink == 0` **VE**
+açık fd sayısı == 0) henüz sağlanmamıştır, veri diskte tamamen sağlam durur —
+sadece artık hiçbir isimle **erişilemez** hâle gelmiştir. `/proc/<PID>/fd/`,
+kernel'in her sürecin o an açık tuttuğu tüm dosya tanımlayıcılarını dışa
+vurduğu yerdir; silinmiş ama hâlâ açık bir dosyanın linki, hedefi artık
+yokken bile `dosya (deleted)` etiketiyle görünmeye devam eder ve bu link,
+**isme değil doğrudan inode'a** işaret ettiği için hâlâ okunabilir/kopyalanabilir.
+Bu numara özellikle "yanlışlıkla sildiğim bir log dosyasını, onu yazan
+servis henüz kapanmadan kurtarabilir miyim" sorusunun standart cevabıdır —
+servis kapanır kapanmaz (son fd de kapanınca) veri gerçekten serbest bırakılır,
+bu pencere kapanmadan müdahale etmek gerekir.
 
 `strace`, en derin hata ayıklama seviyesidir: bir programın kernel'e yaptığı
 **her sistem çağrısını** (dosya açma, okuma, ağ bağlantısı kurma gibi

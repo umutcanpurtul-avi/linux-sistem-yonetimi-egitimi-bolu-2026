@@ -1327,6 +1327,35 @@ history            geçmiş
 > olarak genişler; yeni oluşturduğun bir dizine hemen girmek istediğinde dizin
 > adını iki kere yazmaktan kurtarır.
 
+### `history` ve numarayla komut çağırma — uzun bir komutu yeniden yazmadan çalıştırmak
+
+```bash
+history                # numaralı komut geçmişini göster, örn: 245  find / -name "*.log"
+!245                    # 245 numaralı komutu AYNEN çalıştır
+!245:p                  # ':p' (print) — ÇALIŞTIRMAZ, sadece komutu yazdırır (önce kontrol için)
+!-3                     # şu anki konumdan 3 komut GERİYE git, onu çalıştır
+!find                   # 'find' ile BAŞLAYAN en son komutu çalıştır
+```
+`history` çıktısındaki numarayı `!` ile birleştirmek, bash'in **history
+expansion** (geçmiş genişletme) mekanizmasıdır: `!245` bir komut değil, satırı
+**parse etmeden önce** uygulanan bir metin ikamesidir — bash, geçmişteki 245
+numaralı komutun ham metnini oraya yapıştırıp öyle çalıştırır, sanki sen o
+uzun komutu elle yeniden yazmışsın gibi.
+
+> [!WARNING]
+> **`!245` yazıp Enter'a bastığında komut **önce göstermeden,**
+> doğrudan çalışır** — numarayı yanlış hatırlarsan (örn. istemeden bir
+> `rm -rf` komutunu tetiklemek) geri dönüşü olmayabilir. Bunu güvenli hâle
+> getiren ayar:
+> ```bash
+> shopt -s histverify        # ~/.bashrc'ye eklenirse kalıcı olur
+> ```
+> Bu açıkken `!245` yazınca komut **hemen çalışmaz** — genişletilmiş hâli
+> komut satırına yazılır, sen tekrar Enter'a basmadan (istersen düzenleyerek)
+> çalışmaz. Numarayı bilmiyorsan `history | grep find` ile arayabilir, ya da
+> yukarıdaki `Ctrl+R` (canlı arama) ile numaraya hiç ihtiyaç duymadan aynı
+> işi yapabilirsin.
+
 ---
 
 ## 🧪 Lab
