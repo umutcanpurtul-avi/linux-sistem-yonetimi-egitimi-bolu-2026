@@ -24,8 +24,8 @@ Her görevde ya bir `KOD-X` bulacaksın ya da bir ayar/işlem yapıp ortaya çı
 
 ## Ortam
 
-- **VM:** `Debian-Challenge` — ders makinesinden (`Debian-Egitim`) **tamamen ayrı**, sadece bu challenge için kurulmuş, tek amaçlı bir sanal makine. Debian 13 (Trixie), minimal (GUI'siz) kurulum.
-- **Erişim:** `ssh -p 2224 ogrenci@127.0.0.1` — şifre `ogrenci123`.
+- **VM:** ders makinesinden **tamamen ayrı**, sadece bu challenge için kurulmuş, tek amaçlı bir Debian 13 (Trixie) sanal makinesi. Nasıl kurulacağı: [`challenge-vm/README.md`](challenge-vm/README.md) — VirtualBox'ta tek komut, ya da Proxmox/KVM/başka platformda kendi VM'ine.
+- **Erişim:** VirtualBox ile `ssh -p 2224 ogrenci@127.0.0.1`; başka platformda `ssh ogrenci@<VM-IP>` — şifre `ogrenci123`.
 
   > [!tip] Bu, herkese açık/paylaşılabilir bir **pratik makinesi parolasıdır** — gerçek/kişisel hiçbir bilgi içermez. Aynı şekilde `raportor`/`raportor123` (Bölüm F) ve `sshtest`/`sshtest123` (Bölüm K) hesapları da sadece bu görev için üretilmiştir.
 - Giriş yaptığında ev dizininde hazır bir **`~/gorev/`** klasörü (Bölüm A–L alt klasörleriyle) bulacaksın. Hiçbir şey senin oluşturman gerekmiyor.

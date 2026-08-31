@@ -1,58 +1,101 @@
-# Challenge VM Kurulumu
+# Pratik Challenge — Uygulama VM'i
 
-Bu klasördeki betikler, [Sorular.md](../Sorular.md) içindeki görevlerin (Bölüm A–L, Gün 1–9) çözüleceği, tek amaçlı, izole bir Debian 13 sanal makinesini **sıfırdan, çözülmemiş** haliyle senin bilgisayarında kurar. Hazır bir disk imajı indirmiyorsun — makine kendi bilgisayarında, senin önünde inşa ediliyor.
+Bu klasör sana, [Sorular.md](../Sorular.md)'daki görevleri çözeceğin **tek kullanımlık
+bir Debian 13 sanal makinesi** kurar: önceki sistem yöneticisinden kalma dağınık bir
+ev dizini + bilerek bozuk bırakılmış çalışan bir sunucu. Hazır imaj indirmiyorsun;
+VM senin önünde sıfırdan kuruluyor, hiçbir görev çözülmemiş hâlde.
 
-## Gereksinimler
+Takılırsan [Cevaplar.md](../Cevaplar.md)'a bak.
 
-- VirtualBox 7.x
-- `sshpass` (kurulumu doğrulamak ve görev senaryosunu makineye kopyalamak için)
-- ~800MB internet (Debian netinst paketleri + ek paketler: `acl`, `xxd`, `plocate`, `curl`, `cron`, `logrotate`, `nftables`, `ipcalc`, `netcat`, `bind9-dnsutils`, `whois`, `rsync`, `tmux`)
-- ~8-12 dakika (çoğunlukla bekleme)
+---
 
-## Kurulum
+## Kurulum — iki yoldan birini seç
+
+### Yol 1 — VirtualBox (tek komut, en kolay)
+
+Bilgisayarında **VirtualBox 7.x** ve **`sshpass`** varsa, bu klasörde:
 
 ```bash
 bash provision.sh
 ```
 
-Script sırasıyla:
-1. Debian 13 netinst ISO'sunu indirir (yoksa)
-2. `Debian-Challenge` adında yeni bir VM oluşturur (2048MB RAM, 4 CPU, 20GB birincil disk)
-3. `debian_preseed.tpl` ile tamamen otomatik (unattended), headless bir kurulum yapar
-4. Kurulum bitince VM'i kapatıp ~1.2GB **boş, biçimlendirilmemiş** bir ikinci disk ekler (Bölüm C/D'nin disk/mount görevleri için)
-5. `setup_gorev.sh`'yi makineye kopyalayıp çalıştırarak `~/gorev/` altındaki çözülmemiş görev senaryosunu kurar. Bu adım:
-   - **Bölüm A–F (Gün 1–5):** dağınık ev dizini, gerekli paketler (`acl`, `xxd`, `plocate`, `curl`), bir servis hesabı (`yedekleme`), kısıtlı-sudo'lu `raportor`/`raportor123`, `8080` portunda `gorev-web.service`
-   - **Bölüm G–L (Gün 6–9):** bilerek bozuk operasyonel durum —
-     - `gorev-hog.service` (CPU yiyen kaçak süreç), `gorev-zombi.service` (zombi bırakan parent), `gorev-rapor.service` (dizin eksikliğinden `failed`), `gorev-bakim.service` (`masked`), `gorev-hatali.service` (boot'ta journald'e `err` yazar)
-     - `/etc/cron.d/gorev-rapor` (yanlış betik yolu), `/var/log/gorev-app.log` (rotasyonsuz, ~2MB)
-     - `gorev-fw.service` — `inet gorev_fw` nftables tablosuyla **sadece `tcp/8080`'i** DROP eder (SSH'a dokunmaz)
-     - `gorev-api.service` (`127.0.0.1:8090`) + `/etc/hosts`'ta `api.local.gorev` için **yanlış** IP
-     - `sshtest`/`sshtest123` hesabı + `/etc/ssh/sshd_config.d/60-gorev.conf` (`PermitRootLogin yes`)
-     - `/etc/apt/sources.list.d/gorev-ekstra.list` (çözülemeyen depo URL'si)
-
-## Bağlantı
+~10 dakikada `Debian-Challenge` adlı bir VM kurar ve görev senaryosunu içine yerleştirir.
+Bitince bağlan:
 
 ```bash
-ssh -p 2224 ogrenci@127.0.0.1
-# şifre: ogrenci123
+ssh -p 2224 ogrenci@127.0.0.1        # parola: ogrenci123
 ```
 
-> [!NOTE]
-> **`ogrenci` / `ogrenci123`, bu challenge için üretilmiş genel bir pratik parolasıdır** — gerçek/kişisel hiçbir bilgi içermez, VM'i kendi bilgisayarında kurduğunda bu kimlik bilgileri sende de aynı olacak. Aynı şekilde `raportor` / `raportor123` (Bölüm F) ve `sshtest` / `sshtest123` (Bölüm K) hesapları da sadece bu görev için üretilmiştir. Üretim ortamında asla böyle parolalar kullanma.
+### Yol 2 — Proxmox / KVM / VMware / kendi Debian makinen
 
-> [!WARNING]
-> Bölüm I ve K'daki firewall/`sshd` görevleri **`2224` üzerinden SSH erişimini kesmez** — nftables kuralı yalnızca `tcp/8080`'i, `sshd` drop-in'i yalnızca `PermitRootLogin`'i hedefler. Kendini kilitlememek için `nft flush ruleset` gibi topyekûn komutlardan kaçın; sadece `inet gorev_fw` tablosunu hedefle. Bir şey ters giderse VM'i VirtualBox'tan kapatıp açmak `gorev-fw` kuralı dışında çoğu şeyi sıfırlar, `bash setup_gorev.sh` ise senaryoyu baştan kurar.
+Elinde başka bir sanallaştırma platformu (Proxmox vb.) veya boş bir Debian makinesi varsa:
 
-## Sıfırdan tekrar denemek istersen
+1. **Bir Debian 13 (trixie) VM kur:**
+   - 2 GB RAM, 2 vCPU
+   - **Disk 1:** ~20 GB — mümkünse **SATA/SCSI** bara (Bölüm L1 metni `/dev/sda` varsayar)
+   - **Disk 2:** ~1–2 GB, **boş** — bölümleme/format **yapma** (Bölüm C ve D4 bunu kullanır)
+   - Ağ: internete çıkabilen köprü
+   - Kurulum sırasında yazılım seçiminde **"standard system utilities" + "SSH server"** işaretli olsun
+2. **Bu `challenge-vm/` klasörünü VM'in içine al** (repoyu klonla ya da klasörü kopyala).
+3. **VM'in içinde, root olarak çalıştır:**
+
+   ```bash
+   sudo bash prepare_vm.sh
+   ```
+
+   Bu script `ogrenci` kullanıcısını (parola `ogrenci123`) açar, gerekli paketleri kurar,
+   ikinci diski kontrol eder, sonra görev senaryosunu `ogrenci` olarak kurar. Sonunda
+   bağlantı satırını yazar:
+
+   ```bash
+   ssh ogrenci@<VM-IP>                 # parola: ogrenci123
+   ```
+
+> İkinci diski henüz eklemediysen `prepare_vm.sh` seni uyarır ama durmaz — diski sonra
+> ekleyip script'i tekrar çalıştırabilirsin. Bölüm C/D dışındaki her şey ikinci disk
+> olmadan da çalışır.
+
+---
+
+## Bağlandıktan sonra
+
+- Görevler: **[../Sorular.md](../Sorular.md)** — Bölüm A'dan başla, sırayla ilerle.
+- Kontrol: **[../Cevaplar.md](../Cevaplar.md)**
+- Senaryo `~/gorev/` altında. Bölüm A–F: dosya/bilgi avı. Bölüm G–L: "bozuğu bul, düzelt, doğrula".
+
+## Sıfırlamak / bir bölümü tekrar denemek
+
+VM'in içinde, `ogrenci` olarak:
 
 ```bash
-VBoxManage unregistervm "Debian-Challenge" --delete
-bash provision.sh
+bash ~/setup_gorev.sh
 ```
 
-Sadece `~/gorev/` senaryosunu (diskler/bölümlemeler dahil değil) baştan kurmak için, VM içinde:
-```bash
-bash setup_gorev.sh
-```
+Idempotenttir: `~/gorev/` her seferinde sıfırdan kurulur; Bölüm G–L'nin servis / cron /
+firewall / `hosts` / `sshd` ayarları her çalıştırmada baştaki (bozuk) hâline döner.
+Diskler/bölümlemeler buna dahil değil — onları `umount` edip bölümü silerek geri alırsın.
 
-`setup_gorev.sh` idempotenttir — tekrar tekrar çalıştırılabilir. `~/gorev/` her seferinde sıfırdan kurulur; kullanıcı hesapları/paketler zaten varsa dokunulmadan geçilir; Bölüm G–L servisleri, cron/log/hosts/sshd/apt değişiklikleri her çalıştırmada bilerek-bozuk başlangıç durumuna geri alınır (çözdüğün bir bölümü tekrar denemek istersen script'i yeniden çalıştır).
+---
+
+## Kimlik bilgileri
+
+`ogrenci`/`ogrenci123`, `raportor`/`raportor123` (Bölüm F), `sshtest`/`sshtest123`
+(Bölüm K) — hepsi **yalnızca bu alıştırma için** üretilmiş genel parolalardır, gerçek
+hiçbir bilgi içermez. Üretimde asla böyle parola kullanma.
+
+## Kendini kilitleme
+
+Bölüm I ve K'daki firewall/SSH görevleri erişimini **kesmez** — nftables kuralı yalnız
+`tcp/8080`'i, `sshd` ayarı yalnız `PermitRootLogin`'i hedefler. Yine de `nft flush ruleset`
+gibi topyekûn komutlardan kaçın; sadece `inet gorev_fw` tablosuyla uğraş. Bir şey ters
+giderse VM'i kapatıp açmak çoğu şeyi, `bash ~/setup_gorev.sh` senaryonun tamamını sıfırlar.
+
+---
+
+<sub><b>Bakımcı notu.</b> Üç script var: <code>provision.sh</code> yalnız VirtualBox
+içindir (<code>VBoxManage unattended</code> ile sıfırdan VM kurar). <code>prepare_vm.sh</code>
+platformdan bağımsızdır; hâlihazırda kurulu bir Debian'a <code>ogrenci</code> kullanıcısı +
+paketler ekleyip senaryoyu kurar. <code>setup_gorev.sh</code> ikisinin de çağırdığı,
+asıl <code>~/gorev/</code> senaryosunu kuran ortak script'tir — Debian + systemd + python3 +
+<code>ogrenci</code> kullanıcısı dışında bir şey varsaymaz, o yüzden herhangi bir Debian
+kutusunda elle de çalıştırılabilir.</sub>

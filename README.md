@@ -28,14 +28,15 @@ işlenmiş, uygulanabilir hali (01-15).
 
 ## 🧪 Pratik Challenge
 
-**Gün 1'den Gün 5'e kadar** işlenen konuların (kabuk temelleri, yol/arama/link,
-disk-mount-inode, symlink/mv/aygıtlar, silinen/açık dosya kurtarma, sıkıştırma,
-paket yönetimi, kullanıcı/grup, izinler, ACL, sudo) uygulamalı, çözülmesi
-gereken bir challenge'ı — sorular, ipuçları, ayrı bir cevap dosyası ve
-görevlerin çözüleceği tek amaçlı sanal makineyi **çözülmemiş** haliyle kendi
-bilgisayarında kurmanı sağlayan betikler dahil.
+**Gün 1–9** konularının uygulamalı, çözülmesi gereken hâli: önceki yöneticiden
+kalma dağınık bir ev dizini (Bölüm A–F) ve bilerek bozuk teslim edilmiş çalışan
+bir sunucu (Bölüm G–L). Sorular, ipuçları ve ayrı bir cevap dosyası ile birlikte;
+görevlerin çözüleceği tek amaçlı Debian VM'ini **çözülmemiş** hâliyle kendi
+bilgisayarında kuran betikler `challenge-vm/` altında (VirtualBox'ta tek komut,
+ya da Proxmox/KVM/başka platformda kendi VM'ine).
 
-→ [Pratik Challenge/](./Pratik%20Challenge/Sorular.md)
+→ Sorular: [Pratik Challenge/Sorular.md](./Pratik%20Challenge/Sorular.md)
+→ VM kurulumu: [Pratik Challenge/challenge-vm/](./Pratik%20Challenge/challenge-vm/README.md)
 
 ## 🗂️ Diğer
 
