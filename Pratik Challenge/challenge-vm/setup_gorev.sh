@@ -337,7 +337,13 @@ EOF
 
 # G4 -- 'masked' servis. Calismasi gereken bakim servisi maskelenmis; student
 # unmask + start yapinca journalctl'de KOD-V gorunur.
-sudo_do tee /etc/systemd/system/gorev-bakim.service >/dev/null <<'EOF'
+# NOT: 'systemctl mask' unit'i /etc/systemd/system/<unit> -> /dev/null symlink'i
+# yaparak maskeler -- bu yuzden unit dosyasi /etc'de GERCEK dosya olarak DURAMAZ
+# (durursa mask sessizce basarisiz olur, servis sadece 'disabled' kalir). Unit'i
+# vendor dizinine (/usr/lib/systemd/system) yaziyoruz; mask onu /etc'de golgeler.
+sudo_do rm -f /etc/systemd/system/gorev-bakim.service          # eski surumden kalan gercek dosya
+sudo_do systemctl unmask gorev-bakim.service >/dev/null 2>&1 || true
+sudo_do tee /usr/lib/systemd/system/gorev-bakim.service >/dev/null <<'EOF'
 [Unit]
 Description=Gorev pratik: maskelenmis bakim servisi (Bolum G4)
 [Service]
@@ -348,7 +354,6 @@ WantedBy=multi-user.target
 EOF
 
 sudo_do systemctl daemon-reload
-sudo_do systemctl unmask gorev-bakim.service       >/dev/null 2>&1 || true
 sudo_do systemctl enable gorev-hog.service gorev-zombi.service >/dev/null 2>&1 || true
 sudo_do systemctl restart gorev-hog.service        >/dev/null 2>&1 || true
 sudo_do systemctl restart gorev-zombi.service      >/dev/null 2>&1 || true
@@ -356,6 +361,9 @@ sudo_do systemctl stop gorev-rapor.service         >/dev/null 2>&1 || true   # o
 sudo_do systemctl start gorev-rapor.service        >/dev/null 2>&1 || true   # bilerek FAIL eder (dizin yok)
 sudo_do systemctl disable gorev-bakim.service      >/dev/null 2>&1 || true
 sudo_do systemctl mask gorev-bakim.service         >/dev/null 2>&1 || true
+if [ "$(systemctl is-enabled gorev-bakim.service 2>/dev/null)" != "masked" ]; then
+  echo "  UYARI: gorev-bakim maskelenemedi -- G4 senaryosu eksik kaldi" >&2
+fi
 
 ########## BOLUM H (Gun 6: log, cron, logrotate) ##########
 echo "== Bolum H: log/cron senaryosu =="
