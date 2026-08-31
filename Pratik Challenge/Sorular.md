@@ -3,28 +3,36 @@ tags:
   - egitim/linux-sistem-yonetimi
 tarih: 2026-08-24
 konular:
-  - Gün 1 + Gün 2 + Gün 3 + Gün 4 + Gün 5 pratik tekrarı
+  - Gün 1-9 pratik tekrarı (kabuk, dosya sistemi, süreç/servis, log, ağ, DNS, SSH)
 ---
 
-# Gün 1-5 Pratik Challenge
+# Gün 1-9 Pratik Challenge
 
-Bağlantı: [Linux Sistem Yönetimi Eğitimi](../README.md) · [Gün 1](../Kamp%20Eğitim/Gün%201.md) · [Gün 2](../Kamp%20Eğitim/Gün%202.md) · [Gün 3](../Kamp%20Eğitim/Gün%203.md) · [Gün 4](../Kamp%20Eğitim/Gün%204.md) · [Gün 5](../Kamp%20Eğitim/Gün%205.md) · Cevaplar: [Cevaplar](Cevaplar.md)
+Bağlantı: [Linux Sistem Yönetimi Eğitimi](../README.md) · [Gün 1](../Kamp%20Eğitim/Gün%201.md) · [Gün 2](../Kamp%20Eğitim/Gün%202.md) · [Gün 3](../Kamp%20Eğitim/Gün%203.md) · [Gün 4](../Kamp%20Eğitim/Gün%204.md) · [Gün 5](../Kamp%20Eğitim/Gün%205.md) · [Gün 6](../Kamp%20Eğitim/Gün%206.md) · [Gün 7](../Kamp%20Eğitim/Gün%207.md) · [Gün 8](../Kamp%20Eğitim/Gün%208.md) · [Gün 9](../Kamp%20Eğitim/Gün%209.md) · Cevaplar: [Cevaplar](Cevaplar.md)
 
 > [!WARNING]
-> **Bu challenge, sadece Gün 1 ile Gün 5 arasında **işlenen konularla sınırlıdır.** Her görevde bir **İpucu** kutusu var (küçük bir yönlendirme — hangi komut ailesine bakman gerektiğini söyler ama tam komutu vermez). Tam çözümler ayrı bir dosyada: [Cevaplar](Cevaplar.md) — önce kendin dene, sadece gerçekten takıldığında oraya bak.**
+> **Bu challenge, sadece Gün 1 ile Gün 9 arasında **işlenen konularla sınırlıdır.** Her görevde bir **İpucu** kutusu var (küçük bir yönlendirme — hangi komut ailesine bakman gerektiğini söyler ama tam komutu vermez). Tam çözümler ayrı bir dosyada: [Cevaplar](Cevaplar.md) — önce kendin dene, sadece gerçekten takıldığında oraya bak.**
 
 ## Senaryo
 
-Bu makinede senden önce çalışmış bir sistem yöneticisinin **dağınık ev dizini** var. Dosya adları gerçekçi ama neyin ne işe yaradığı adından belli değil. Görev metinleri de bilerek **hangi komutu kullanacağını söylemiyor** — bunu senin çözmen gerekiyor. Her görevde ya bir değer (`KOD-X`) bulacaksın ya da bir ayar/işlem yapıp ortaya çıkan gerçek bir değeri (inode numarası, UUID, izin biti, dosya boyutu...) kaydedeceksin.
+Senden önce çalışmış bir sistem yöneticisi bu makineyi iki şekilde miras bıraktı:
+
+1. **Bölüm A–F (Gün 1–5):** ev dizini **dağınık** — dosya adları gerçekçi ama neyin ne işe yaradığı adından belli değil. Görev metinleri de bilerek **hangi komutu kullanacağını söylemiyor**.
+2. **Bölüm G–L (Gün 6–9):** aynı admin, **çalışan sunucuyu da bozuk teslim etmiş** — bir süreç CPU'yu yiyor, bir servis `failed` durumda, bir cron job çalışmıyor, `8080` portu kilitli, bir uygulama bağımlılığına ulaşamıyor, `sshd` sertleştirilmemiş, `apt update` hata veriyor. Bu bölümler ağırlıkla **"teşhis et → düzelt → doğrula"** formatında; çıktı çoğu zaman "servis artık `active`" gibi bir **durum** oluyor, sadece birkaç yerde erişim kanıtı olarak bir `KOD` var.
+
+Her görevde ya bir `KOD-X` bulacaksın ya da bir ayar/işlem yapıp ortaya çıkan gerçek bir değeri (inode numarası, UUID, PID, subnet broadcast adresi, izin biti...) kaydedeceksin.
 
 ## Ortam
 
 - **VM:** `Debian-Challenge` — ders makinesinden (`Debian-Egitim`) **tamamen ayrı**, sadece bu challenge için kurulmuş, tek amaçlı bir sanal makine. Debian 13 (Trixie), minimal (GUI'siz) kurulum.
 - **Erişim:** `ssh -p 2224 ogrenci@127.0.0.1` — şifre `ogrenci123`.
 
-  > [!tip] Bu, herkese açık/paylaşılabilir bir **pratik makinesi parolasıdır** — gerçek/kişisel hiçbir bilgi içermez.
-- Giriş yaptığında ev dizininde hazır bir **`~/gorev/`** klasörü bulacaksın. Hiçbir şey senin oluşturman gerekmiyor.
-- Ayrıca VM'e **ikinci bir disk zaten takılı** (~1.2 GB, boş, Bölüm C/D için). Disk/mount bölümündeki hiçbir adımı ana diskte (`/dev/sda`) **denemeyin** — sadece ikinci diskte çalışın.
+  > [!tip] Bu, herkese açık/paylaşılabilir bir **pratik makinesi parolasıdır** — gerçek/kişisel hiçbir bilgi içermez. Aynı şekilde `raportor`/`raportor123` (Bölüm F) ve `sshtest`/`sshtest123` (Bölüm K) hesapları da sadece bu görev için üretilmiştir.
+- Giriş yaptığında ev dizininde hazır bir **`~/gorev/`** klasörü (Bölüm A–L alt klasörleriyle) bulacaksın. Hiçbir şey senin oluşturman gerekmiyor.
+- VM'e **ikinci bir disk zaten takılı** (~1.2 GB, boş, Bölüm C/D için). Disk/mount adımlarını ana diskte (`/dev/sda`) **denemeyin** — sadece ikinci diskte.
+- Bölüm G–L için kurulmuş olanlar: `gorev-hog` / `gorev-zombi` / `gorev-rapor` / `gorev-bakim` / `gorev-hatali` / `gorev-fw` / `gorev-api` systemd servisleri, `/etc/cron.d/gorev-rapor`, `/var/log/gorev-app.log`, `/etc/apt/sources.list.d/gorev-ekstra.list`, `/etc/ssh/sshd_config.d/60-gorev.conf`.
+
+  > [!warning] Firewall (Bölüm I) ve `sshd` (Bölüm K) görevleri **`2224` üzerinden SSH erişimini etkilemez** — nftables kuralı yalnızca `tcp/8080`, `sshd` drop-in'i yalnızca `PermitRootLogin`. Yine de: `sudo nft flush ruleset` gibi **topyekûn** komutlardan kaçın, sadece senaryo tablosunu (`inet gorev_fw`) hedefle.
 
 ```bash
 ssh -p 2224 ogrenci@127.0.0.1
@@ -308,6 +316,233 @@ Kullanacağın araç canlı tarama yapmaz, önceden çıkarılmış bir **indeks
 
 ---
 
+## Bölüm G — Süreç ve Servis Yönetimi (Gün 6)
+
+> Bu bölümden itibaren senaryo değişiyor: dosya avı değil, **çalışan bir sistemi teşhis edip düzeltmek**. Çoğu görevin "cevabı" bir durum: servis `active` oldu, süreç durdu, hata kayboldu.
+
+**G1.** Makine yavaş. Bir süreç bir CPU çekirdeğini tam kapasite meşgul ediyor. Onu **bul**, önce önceliğini en düşük seviyeye çek (sistemi bırakması için), sonra onu başlatan şeyi **kalıcı olarak** durdur (yeniden başlamasın). Durdurduğunu doğrula.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Canlı süreç izleyen araçta CPU'ya göre sırala. Süreç bir systemd servisi tarafından başlatılmış olabilir — `ps` çıktısındaki komut adı ve `systemctl status <PID>` bunu söyler. Öncelik = `renice`; kalıcı durdurma = servisi `stop` + `disable`.
+</details>
+
+**G2.** `ps` çıktısında `Z` (defunct/zombi) durumunda bir süreç var. Onu **kimin** bıraktığını (parent PID) bul. Zombiye `kill -9` göndermeyi dene — ne oldu, neden? Zombiyi gerçekten temizle.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Zombi zaten ölüdür — ona sinyal göndermek işe yaramaz. `ps -eo pid,ppid,stat,comm` ile parent'ı bul; asıl hedef parent'tır. Parent bir servisse onu yeniden başlatmak çocuğu reap eder.
+</details>
+
+**G3.** `gorev-rapor.service` servisi başlamıyor. **Neden** başlamadığını servisin kendi günlüğünden öğren, sorunu gider, servisi başarıyla çalıştır. Başarılı olunca ürettiği dosyada `KOD-U` var.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`systemctl status gorev-rapor` ve `journalctl -u gorev-rapor` son hatayı gösterir — "No such file or directory" bir **yol** eksikliğini işaret eder. Servisin `ExecStart`'ındaki betiği (`systemctl cat`) okuyup nereye yazmaya çalıştığına bak.
+</details>
+
+**G4.** Düzenli çalışması gereken `gorev-bakim.service` şu an hiç başlatılamıyor — `systemctl start` "masked" diyor. Bu durumu düzelt, servisi bir kez çalıştır, günlüğünden `KOD-V`'yi oku.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+"masked" = `/dev/null`'a symlink'lenmiş, kasıtlı olarak engellenmiş. Tersi bir `systemctl` alt komutu var. Sonra `start` + `journalctl -u ...`.
+</details>
+
+**G5.** Bu makinede dinleme yapan (LISTEN) tüm TCP portlarını, her birini hangi süreç/servisin tuttuğuyla birlikte listele. `8080` ve `8090` portlarını hangi servisler açmış, PID'leri kaç? (Sabit KOD yok — kendi bulduğun değerleri yaz.)
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Soket istatistiği veren araç, `-t` (tcp), `-l` (listen), `-n` (isim çözme yok), `-p` (süreç) bayraklarıyla tam bunu verir. Root gerekebilir.
+</details>
+
+---
+
+## Bölüm H — Log, Zamanlanmış Görev, Log Rotasyonu (Gün 6)
+
+**H1.** Bu boot'ta bir servis journald'e **kritik seviyede** (`err`) bir hata yazdı. Zaman/önem filtreleriyle o kaydı bul, içindeki `KOD-W`'yi oku.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`journalctl` önem derecesine (`-p err`) ve boot'a (`-b`) göre filtrelenebilir. Kaydı yazan etiket `gorev-app`.
+</details>
+
+**H2.** `/etc/cron.d/gorev-rapor` her dakika bir rapor üretmeli ama `~/gorev/bolum-h/rapor-cikti.txt` boş kalıyor. Cron'un **neden** başaramadığını günlüğünden gör, cron kuralını düzelt, bir-iki dakika içinde dosyaya `KOD-X` satırının düştüğünü doğrula.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`journalctl -u cron` cron'un her dakika CMD'yi **denediğini** gösterir ama çıktı yok. Kuralın sözdizimi doğru, komut **yolu** yanlış — `ls` ile yok olduğunu gör, `find / -name ...` ile gerçek yeri (`/opt/gorev/`) bul. `cron.d` satırında komuttan önce kullanıcı alanı (`ogrenci`) vardır.
+</details>
+
+**H3.** `/var/log/gorev-app.log` sınırsız büyüyor, hiç rotasyon kuralı yok. Bu log için bir `logrotate` kuralı yaz (günlük, 7 kopya, sıkıştırma). Önce **kuru çalıştırma** (`-d`) ile ne yapacağını gör, sonra **zorla** (`-f`) bir rotasyon yaptır. `.1` dosyasının oluştuğunu ve yeni logun boş başladığını doğrula.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Kurallar `/etc/logrotate.d/` altına ayrı dosya olarak konur (paket deseni). `daily`, `rotate 7`, `compress`, `missingok`, `notifempty` yönergeleri. Test: `sudo logrotate -d /etc/logrotate.d/gorev-app` sonra `-f`.
+</details>
+
+**H4.** `last` ile bu makineye yapılan giriş kayıtlarına bak. `ogrenci` bu boot'ta kaç kez ve nereden (hangi IP) SSH ile giriş yaptı? (Kendi bulduğun değeri yaz — `wtmp` ikili bir dosyadır, editörle açılmaz.)
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`last`, `/var/log/wtmp` ikili dosyasını okunur hale getirir. `last -a` kaynak adresi/host'u sağ sütunda gösterir. Bu boot'la sınırlamak için `last -s today` ya da `journalctl -u ssh` içinde "Accepted".
+</details>
+
+---
+
+## Bölüm I — Ağ Temelleri, Soket İstatistiği, Firewall (Gün 7)
+
+Bu bölümde sabit KOD yoktur (I4 sonrası KOD-T tekrar erişilebilir olur) — arayüz adı, IP/prefix, gateway, network/broadcast adresi, kullanılabilir host aralığı, port durumları gibi **kendi ürettiğin** değerleri kaydet.
+
+**I1.** Bu makinenin aktif ağ arayüzünün adını, IPv4 adresini + prefix uzunluğunu (CIDR), ve varsayılan ağ geçidini (gateway) bul.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`ip -brief address` kısa bir özet verir; `ip route` içindeki `default via ...` satırı gateway'i söyler.
+</details>
+
+**I2.** I1'de bulduğun IP/prefix'ten yola çıkarak: bu ağın **network adresi**, **broadcast adresi**, **kullanılabilir host aralığı** (ilk–son) ve **toplam kullanılabilir host sayısı** nedir? Elle hesapla, sonra bir araçla doğrula.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`ipcalc <ip>/<prefix>` hepsini birden verir. /24 için: network = son oktet `.0`, broadcast = `.255`, kullanılabilir = `.1`–`.254` (254 host).
+</details>
+
+**I3.** `8080` portundaki web servisine `curl http://localhost:8080/gizli.txt` ile ulaşmayı dene — takılıyor/başarısız. Bunun bir **firewall** sorunu olduğunu kanıtla (kuralları listele), engelleyen kuralı bul, **sadece o kuralı** kaldır (topyekûn flush yapma), `curl`'ün tekrar çalıştığını ve `KOD-T`'yi verdiğini doğrula.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`sudo nft list ruleset` tüm nftables kurallarını gösterir — senaryo kuralı `inet gorev_fw` adlı ayrı bir tabloda, `tcp dport 8080 drop`. Onu uygulayan bir systemd servisi de var (`gorev-fw`); kalıcı çözüm için onu da durdur/disable et.
+</details>
+
+**I4.** `8080` (web), `22` (ssh) ve `9999` (kapalı) portlarının localhost'ta açık mı kapalı mı olduğunu bir port test aracıyla kontrol et. I3'ten **önce ve sonra** 8080 için sonucu karşılaştır.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`nc -zv localhost <port>` bir portun bağlantı kabul edip etmediğini söyler (`-z` = veri gönderme, sadece tara; `-v` = sonucu yaz).
+</details>
+
+**I5.** Ağ geçidine `ping` at (3 paket). Sonra `traceroute` ile geçide giden yolu çıkar. `ping` çalışıyor ama internetteki bir adrese `ping` çalışmıyorsa bu ne anlama gelir — DNS mi, yönlendirme mi, firewall mı? Kısa bir cümleyle yaz.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`ping` ICMP kullanır, isim yerine doğrudan IP verirsen DNS devre dışı kalır — böylece sorunu isim çözme mi bağlantı mı diye ayırabilirsin.
+</details>
+
+---
+
+## Bölüm J — İsim Çözümleme: /etc/hosts, nsswitch, dig (Gün 8)
+
+**J1.** `~/gorev/bolum-j/app/kontrol.sh` betiği, bir iç API'ye (`api.local.gorev`) bağlanıp durum almalı ama başarısız oluyor. Sorunun **isim çözümleme** kaynaklı olduğunu kanıtla (isim hangi IP'ye çözülüyor, bu doğru mu?), düzelt, betiğin `KOD-Y`'yi getirdiğini doğrula.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`getent hosts api.local.gorev` ismin hangi IP'ye gittiğini söyler; `dig api.local.gorev` ise DNS'te hiç olmadığını (yani kaydın sadece bir dosyada olduğunu) gösterir. O dosya `/etc/hosts`. API aslında `127.0.0.1:8090`'da.
+</details>
+
+**J2.** `/etc/nsswitch.conf` içindeki `hosts:` satırına bak. `api.local.gorev` DNS'te yokken bile neden çözülebiliyordu (J1'den önce yanlış da olsa bir cevap dönüyordu)? Satırdaki sıralama ne anlatıyor?
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`hosts: files dns` → önce `/etc/hosts` (`files`), sonra DNS (`dns`). `files` bir cevap verirse DNS'e hiç gidilmez.
+</details>
+
+**J3.** `dig` aracının mekaniğini pekiştir (VM'de internet varsa): bir alan adının A kaydını sorgula (`dig +short`), MX kayıtlarını al, bir IP için ters (PTR) sorgu yap (`dig -x`), belirli bir DNS sunucusuna sor (`dig @1.1.1.1`). ANSWER bölümündeki kayıt sayısını ve TTL'i not al. (İnternet yoksa `dig api.local.gorev` ile "DNS'te yok" cevabını gözlemle — J1/J2'nin kanıtı.)
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`dig google.com A +short`, `dig google.com MX`, `dig -x 1.1.1.1`, `dig @9.9.9.9 debian.org`. Çıktının `;; ANSWER SECTION` kısmına ve satır başındaki TTL sütununa bak.
+</details>
+
+**J4.** `host` ve `whois` araçlarını dene (internet varsa): bir IP'nin ters kaydını `host` ile bul; bir alan adının kayıt firmasını (registrar) / oluşturulma tarihini `whois` ile öğren. (Bunlar mekanik alıştırma — sabit değer beklenmez.)
+
+---
+
+## Bölüm K — SSH: Anahtar, Sertleştirme, Tünel, Aktarım (Gün 9)
+
+Bu bölümde `sshtest` / `sshtest123` hesabına (aynı makinede, `localhost` üzerinden) bağlanacaksın.
+
+**K1.** Kendine bir SSH anahtar çifti üret (ed25519), **açık** anahtarını `sshtest` hesabına kur, sonra `sshtest@localhost`'a **parola girmeden** bağlanıp `~/kod.txt` içindeki `KOD-Z`'yi oku.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`ssh-keygen -t ed25519 -f ~/.ssh/gorev_key -N ''` → `ssh-copy-id -i ~/.ssh/gorev_key.pub sshtest@localhost` (bir kez `sshtest123` sorar) → `ssh -i ~/.ssh/gorev_key sshtest@localhost 'cat kod.txt'`.
+</details>
+
+**K2.** `/etc/ssh/sshd_config.d/60-gorev.conf` içinde güvensiz bir ayar var: `PermitRootLogin yes`. Bunu güvenli bir değere çek, yapılandırmayı **yazmadan önce** doğrula (`sshd -t`), servisi yeniden yükle, etkin değeri kontrol et. (Kendi ürettiğin değer: `sshd -T | grep permitrootlogin` çıktısı.) `2224` üzerinden kendi bağlantın etkilenmez.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Güvenli değerler: `no` ya da `prohibit-password`. `sudo sshd -t` sözdizimi kontrolü; `sudo systemctl reload ssh`; `sudo sshd -T | grep -i permitrootlogin` etkin (birleştirilmiş) değeri verir.
+</details>
+
+**K3.** Bu makinede yalnızca **`127.0.0.1:8090`**'a bağlı bir iç servis var (dışarıdan erişilemez — Bölüm J'deki API). `sshtest@localhost` üzerinden **yerel port yönlendirme** (`-L`) kurarak bu servise `9090` portundan ulaş ve `http://localhost:9090/tunel.txt` içindeki `KOD-AA`'yı oku. Sonra tüneli kapat. (Bu, `ssh -L`'in klasik kullanımıdır: yalnızca uzak uçta loopback'e bağlı bir servise erişmek.)
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`ssh -i ~/.ssh/gorev_key -L 9090:127.0.0.1:8090 -N -f sshtest@localhost` — `-L yerel:hedef_host:hedef_port`, `-N` komut çalıştırma yok, `-f` arka plan. Kapatmak için `pgrep -af 'ssh .*9090'` → `kill`.
+</details>
+
+**K4.** `~/gorev/bolum-k/veri/` klasörünü `rsync` ile `sshtest@localhost:/tmp/gorev-veri/` altına aktar. Sonra iki taraftaki dosyaların **sha256** özetlerini karşılaştırarak aktarımın bozulmadığını doğrula. `rsync`'i bir kez daha çalıştır — bu sefer neden "hiçbir şey aktarılmadı"?
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`rsync -av -e 'ssh -i ~/.ssh/gorev_key' ~/gorev/bolum-k/veri/ sshtest@localhost:/tmp/gorev-veri/`. Doğrulama: `sha256sum ~/gorev/bolum-k/veri/*` vs `ssh sshtest@localhost 'sha256sum /tmp/gorev-veri/*'`. `rsync` sadece **değişen** dosyaları gönderir.
+</details>
+
+**K5.** `ssh-agent` başlat, anahtarını `ssh-add` ile ekle, `ssh-add -l` ile parmak izini (fingerprint) gör. Artık `-i` vermeden `ssh sshtest@localhost` çalışıyor mu? (Kendi ürettiğin değer: anahtarın `SHA256:...` parmak izi.)
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`eval "$(ssh-agent -s)"` → `ssh-add ~/.ssh/gorev_key` → `ssh-add -l`. Agent çalışırken ssh anahtarı otomatik kullanır.
+</details>
+
+---
+
+## Bölüm L — dd, Otomatik Başlatma, Paket Deposu, tmux (Gün 9)
+
+**L1.** `dd` ile `/dev/sda`'nın **ilk sektörünü** (512 bayt) oku ve son iki baytına bak. Bu "boot signature" değeri nedir? (Kendi bulduğun değeri yaz — hex olarak.)
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`sudo dd if=/dev/sda bs=512 count=1 2>/dev/null | xxd | tail -2` — son satırın sonundaki iki bayt. Klasik MBR/protective-MBR imzası `55 aa`.
+</details>
+
+**L2.** `gorev-web.service` her açılışta otomatik başlıyor mu? `systemctl is-enabled` ile kontrol et, `enable` işleminin `/etc/systemd/system/` altında **hangi symlink'i** oluşturduğunu bul. Debian'da `apt install` ile kurulan bir servis genelde otomatik enable+start olur; RHEL/Rocky'de `dnf install` sonrası servis **disabled** gelir — bu farkın sebebi ne? (Kısa bir cümle.)
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`systemctl is-enabled gorev-web` ve `ls -l /etc/systemd/system/multi-user.target.wants/ | grep gorev`. Debian'ın politikası (`policy-rc.d` / `deb-systemd-helper`) paket kurulumunda servisi etkinleştirir; RHEL etmez.
+</details>
+
+**L3.** `sudo apt update` bir hata veriyor. Hatayı oku, **hangi depo dosyasının** sorun çıkardığını bul, o dosyayı kaldır, `apt update`'in temiz çalıştığını doğrula.
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+Hata mesajı çözümlenemeyen bir host adı içerir (`apt.olmayan.gorev`). Depolar `/etc/apt/sources.list.d/` altında ayrı dosyalardadır — hangisinin bu URL'yi içerdiğini `grep -r` ile bul.
+</details>
+
+**L4.** Uzun sürecek bir işi (`sleep 600` ya da `top`) bir `tmux` oturumunda başlat, oturumdan **ayrıl** (detach), SSH bağlantını **tamamen kapat**, yeniden bağlan ve oturuma **geri dön** (attach) — iş hâlâ çalışıyor mu? Bu neden `nohup` / `&` ile arka plana atmaktan farklı/daha iyi?
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`tmux new -s gorev` → işi başlat → `Ctrl-b` sonra `d` (detach). Yeniden: `tmux ls` → `tmux attach -t gorev`. tmux tam bir terminal oturumu tutar — geri dönüp etkileşime devam edebilirsin.
+</details>
+
+**L5.** Sık kullandığın bir komuta kalıcı bir `alias` tanımla (örn. `gd='systemctl status gorev-web --no-pager'`), yeni bir kabuk açıp çalıştığını doğrula. `type gd` ne diyor? (`~/.bashrc`'ye ekle, `source` et.)
+
+<details><summary>İpucu (korkaklar için)</summary>
+
+`alias gd='...'` satırını `~/.bashrc` sonuna ekle → `source ~/.bashrc` (ya da yeni SSH oturumu). `type gd` bir şeyin alias mı, dosya mı, builtin mi olduğunu söyler.
+</details>
+
+---
+
 ## Bitirince
 
-Topladığın kodları (`KOD-A`'dan `KOD-T`'ye) ve Bölüm C/D/E'de kendi ürettiğin değerleri (UUID, inode numaraları, aygıt sayıları, dosya/dizin sayıları...) bir kenara yaz. Kontrol için: [Cevaplar](Cevaplar.md). Her bölümü bitirdikçe [Gün 1](../Kamp%20Eğitim/Gün%201.md), [Gün 2](../Kamp%20Eğitim/Gün%202.md), [Gün 3](../Kamp%20Eğitim/Gün%203.md), [Gün 4](../Kamp%20Eğitim/Gün%204.md) ve [Gün 5](../Kamp%20Eğitim/Gün%205.md) notlarındaki "Hedefler"/"Sorular" kısımlarını gözden geçir, hâlâ soru işareti kalan bir yer varsa söyle, birlikte netleştirelim.
+Topladığın kodları (`KOD-A`'dan `KOD-AA`'ya) ve Bölüm C–L'de kendi ürettiğin değerleri (UUID, inode numaraları, PID'ler, subnet broadcast/host aralığı, port durumları, `sshd -T` çıktısı, boot signature, anahtar parmak izi...) bir kenara yaz. Kontrol için: [Cevaplar](Cevaplar.md).
+
+Her bölümü bitirdikçe ilgili gün notlarındaki "Hedefler" / "Sorular / Takip Edilecekler" kısımlarını gözden geçir:
+- Bölüm A–F → [Gün 1](../Kamp%20Eğitim/Gün%201.md) [Gün 2](../Kamp%20Eğitim/Gün%202.md) [Gün 3](../Kamp%20Eğitim/Gün%203.md) [Gün 4](../Kamp%20Eğitim/Gün%204.md) [Gün 5](../Kamp%20Eğitim/Gün%205.md)
+- Bölüm G–H → [Gün 6](../Kamp%20Eğitim/Gün%206.md) · Bölüm I → [Gün 7](../Kamp%20Eğitim/Gün%207.md) · Bölüm J → [Gün 8](../Kamp%20Eğitim/Gün%208.md) · Bölüm K–L → [Gün 9](../Kamp%20Eğitim/Gün%209.md)
+
+Hâlâ soru işareti kalan bir yer varsa söyle, birlikte netleştirelim.

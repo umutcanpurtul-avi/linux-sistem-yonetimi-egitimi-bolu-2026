@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Gün 1-5 Pratik Challenge için tek amaçlı, izole bir Debian 13 VM'i kurar.
-# Gereksinimler: VirtualBox 7.x, sshpass, ~500MB internet (paket indirme).
+# Gün 1-9 Pratik Challenge için tek amaçlı, izole bir Debian 13 VM'i kurar.
+# Gereksinimler: VirtualBox 7.x, sshpass, ~800MB internet (paket indirme).
 #
 # Kullanım:
 #   bash provision.sh
