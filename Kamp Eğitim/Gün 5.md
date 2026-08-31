@@ -15,7 +15,7 @@ konular:
 
 # Gün 5 Raporu
 
-Bağlantı: [Linux Sistem Yönetimi Eğitimi](../README.md) · [00 - Eğitim Planı](../00%20-%20Eğitim%20Planı.md) · [Gün 4](Gün%204.md)
+Bağlantı: [Linux Sistem Yönetimi Eğitimi](../README.md) · [00 - Eğitim Planı](../00%20-%20Eğitim%20Planı.md) · [Gün 4](Gün%204.md) · [Gün 6](Gün%206.md)
 
 ## İşlenen Konular
 
@@ -43,7 +43,7 @@ Bağlantı: [Linux Sistem Yönetimi Eğitimi](../README.md) · [00 - Eğitim Pla
 
 ### Kullanıcı/grup veritabanı dosyaları — `/etc/passwd`, `/etc/shadow`, `/etc/group`, `/etc/gshadow`
 
-Linux'ta "kullanıcı" ve "grup" kavramları, süslü bir veritabanı değil — **düz metin, iki nokta üst üste (`:`) ile ayrılmış** dört basit dosyadır. Bu dört dosyayı satır satır okuyabilmek, sistem yönetiminin en temel becerisidir çünkü `useradd`, `passwd`, `groupadd` gibi komutların **hepsi** aslında bu dosyaları düzenleyen sarmalayıcılardan (wrapper) ibarettir.
+**Mekanizma:** "kullanıcı" ve "grup", Linux'ta süslü bir veritabanı değil — **düz metin, `:` ile ayrılmış** dört dosyadır. `useradd`, `passwd`, `groupadd` gibi komutların **hepsi** aslında bu dosyaları kilitleyip düzenleyen sarmalayıcılardır (kilitleme önemli: iki komut aynı anda `/etc/passwd`'yi bozmasın diye). Bir programın "ucp kimdir, UID'si kaç" sorusunu sorması, `getpwnam()` / `getpwuid()` çağrılarıyla olur; bunlar `/etc/nsswitch.conf`'a bakıp kaynağı belirler (yerelde `files` → bu dosyalar; ağ ortamında `sss`/`ldap` olabilir).
 
 **`/etc/passwd`** — her satır bir kullanıcı, 7 alan:
 
@@ -51,338 +51,352 @@ Linux'ta "kullanıcı" ve "grup" kavramları, süslü bir veritabanı değil —
 ucp:x:1000:1000:UCP Kullanici:/home/ucp:/bin/bash
 ```
 
-| Sıra | Alan            | Anlamı                                                                                                                              |
-| ---- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `ucp`           | kullanıcı adı (login name)                                                                                                          |
-| 2    | `x`             | parola alanı — **artık kullanılmıyor**, sadece "gerçek hash `/etc/shadow`'da" işareti; tarihsel olarak burada gerçek hash tutulurdu |
-| 3    | `1000`          | UID (kullanıcı numarası)                                                                                                            |
-| 4    | `1000`          | GID — bu kullanıcının **birincil (primary)** grubu                                                                                  |
-| 5    | `UCP Kullanici` | GECOS alanı — tam ad/açıklama, isteğe bağlı serbest metin                                                                           |
-| 6    | `/home/ucp`     | home dizini                                                                                                                         |
-| 7    | `/bin/bash`     | giriş (login) shell'i                                                                                                               |
+| Sıra | Alan | Anlamı |
+| ---- | --------------- | --- |
+| 1 | `ucp` | kullanıcı adı (login name) |
+| 2 | `x` | parola alanı — **artık kullanılmıyor**, sadece "gerçek hash `/etc/shadow`'da" işareti; tarihsel olarak burada gerçek hash tutulurdu |
+| 3 | `1000` | UID (kullanıcı numarası) |
+| 4 | `1000` | GID — bu kullanıcının **birincil (primary)** grubu |
+| 5 | `UCP Kullanici` | GECOS alanı — tam ad/açıklama, isteğe bağlı serbest metin |
+| 6 | `/home/ucp` | home dizini |
+| 7 | `/bin/bash` | giriş (login) shell'i — `/usr/sbin/nologin` ise o hesapla giriş yapılamaz |
 
-**`/etc/shadow`** — gerçek parola hash'lerinin ve parola yaşlandırma (aging) kurallarının tutulduğu dosya, 9 alan:
+**`/etc/shadow`** — gerçek parola hash'leri ve parola yaşlandırma kuralları, 9 alan:
 
 ```
 ucp:$y$j9T$...hash...:19960:0:99999:7:::
 ```
 
-| Sıra | Alan | Anlamı |
-|---|---|---|
-| 1 | kullanıcı adı | |
-| 2 | hash'lenmiş parola (`$algoritma$salt$hash` biçiminde) — `!` veya `*` ise **parola ile giriş kilitli/devre dışı** demektir |
+| Sıra | Alan |
+|---|---|
+| 1 | kullanıcı adı |
+| 2 | hash'lenmiş parola (`$algoritma$salt$hash`) — `!` veya `*` ise **parola ile giriş kilitli/devre dışı** |
 | 3 | son parola değişiminin 1 Ocak 1970'ten bu yana geçen **gün sayısı** |
-| 4 | min. gün — bu kadar gün geçmeden parola tekrar değiştirilemez |
-| 5 | max. gün — bu kadar gün sonra parola değişimi zorunlu olur |
-| 6 | uyarı süresi — süre dolmadan kaç gün önce kullanıcı uyarılır |
-| 7 | inaktiflik süresi — süre dolduktan sonra hesabın kilitlenmesine kaç gün var |
+| 4 | min. gün — bu kadar geçmeden parola tekrar değiştirilemez |
+| 5 | max. gün — bu kadar sonra parola değişimi zorunlu |
+| 6 | uyarı süresi — süre dolmadan kaç gün önce uyarılır |
+| 7 | inaktiflik süresi — süre dolduktan sonra hesap kilitlenene kadar kaç gün |
 | 8 | hesabın **kesin olarak** devre dışı kalacağı tarih (epoch gün) |
-| 9 | rezerve alan, kullanılmıyor |
+| 9 | rezerve alan |
 
-**Neden `/etc/shadow` diye ayrı bir dosya var, hash'ler neden `/etc/passwd` içinde kalmadı?** Tarihsel olarak `/etc/passwd` **herkes tarafından okunabilir (world-readable)** olmak zorundaydı — çünkü `ls -l` gibi komutlar UID'den kullanıcı adına çevirmek için bu dosyayı okur. Ama bu, hash'lerin de herkese açık olması demekti — 1980'lerde offline brute-force/dictionary saldırıları yaygınlaşınca hash'ler **sadece root'un okuyabildiği** `/etc/shadow`'a (izinleri genelde `640`, sahibi `root:shadow`) taşındı — "shadow password suite" bu yüzden var.
+**Neden `/etc/shadow` diye ayrı bir dosya var? (tarihsel gerekçe — 5N1K'nın "neden"i)**
+`/etc/passwd` **herkes tarafından okunabilir (world-readable)** olmak **zorundadır** — çünkü `ls -l` gibi araçlar UID→kullanıcı adı çevirisi için, giriş/kimlik doğrulama araçları da UID/home/shell için bu dosyayı okur; sadece root okuyabilse sistemin yarısı çalışmazdı. Ama bu, hash'lerin de herkese açık olması demekti. 1980'lerde CPU gücü artıp offline sözlük/brute-force saldırıları pratikleşince, "shadow password suite" çözümü doğdu: `/etc/passwd` world-readable kalsın, **hash'ler yalnızca root'un (ve `shadow` grubunun) okuyabildiği** `/etc/shadow`'a taşınsın (izin `640`, sahip `root:shadow`). Prensip: **erişimi mümkün olan en dar çevreye indirmek** — ACL, SELinux gibi ileri katmanların da temel motivasyonu bu.
 
-**`/etc/group`** — `/etc/passwd`'nin grup karşılığı, 4 alan:
+**`/etc/group`** — grup karşılığı, 4 alan:
 
 ```
 sudo:x:27:ucp,ege
 ```
 
-| Sıra | Alan | Anlamı |
-|---|---|---|
+| Sıra | Alan |
+|---|---|
 | 1 | grup adı |
-| 2 | `x` — grup parolası alanı (neredeyse hiç kullanılmaz, `/etc/gshadow`'a taşınmıştır) |
+| 2 | `x` — grup parolası alanı (neredeyse hiç kullanılmaz, `/etc/gshadow`'a taşındı) |
 | 3 | GID |
-| 4 | bu grubu **ikincil (supplementary)** grup olarak kullanan kullanıcıların virgülle ayrılmış listesi |
+| 4 | bu grubu **ikincil (supplementary)** grup olarak kullanan kullanıcıların virgülle listesi |
 
 > [!TIP]
-> **Bir kullanıcının birincil grubu burada listelenmez — birincil grup zaten `/etc/passwd`'nin 4. alanında (GID) tanımlıdır. `/etc/group`'taki liste sadece o kişinin **ek olarak** üye olduğu grupları gösterir.**
+> **Bir kullanıcının **birincil** grubu burada listelenmez — o zaten `/etc/passwd`'nin 4. alanında (GID). `/etc/group`'taki liste sadece **ek** üyelikleri gösterir.**
 
-**`/etc/gshadow`** — grup parolaları ve grup yöneticileri için (çok nadir kullanılır): `grup_adi:hash:yoneticiler:uyeler`.
+**`/etc/gshadow`** — grup parolaları ve grup yöneticileri (çok nadir): `grup:hash:yoneticiler:uyeler`.
+
+> [!NOTE]
+> **Bu dört dosyayı elle düzenlemen gerekirse `nano` değil `vipw` / `vigr` kullan — `visudo` gibi bunlar da dosyayı kilitler ve kaydetmeden önce tutarlılık kontrolü yapar.**
 
 ### Dosya izinleri — `chmod`, `chown`, `chgrp`
 
-Klasik Unix izin modeli her dosya için **üç sahiplik sınıfı** (owner/user, group, other) ve her sınıf için **üç izin biti** (read=4, write=2, execute=1) tanımlar — toplam 9 bit, `rwxrwxrwx` şeklinde okunur.
+**Mekanizma:** klasik Unix izin modeli her dosya için **üç sahiplik sınıfı** (owner/user, group, other) ve her sınıf için **üç izin biti** (read=4, write=2, execute=1) tutar — toplam 9 bit, inode'da saklanır, `rwxrwxrwx` şeklinde okunur. Kernel bir dosya erişiminde şu sırayla bakar: erişen kullanıcı dosyanın **sahibi mi** → owner bitleri; değilse dosyanın **grubunun üyesi mi** → group bitleri; hiçbiri değilse → other bitleri. **İlk uyan sınıf kazanır** (owner isen ve owner bitinde `x` yoksa, group'ta `x` olsa bile çalıştıramazsın).
+
+- **5N1K:** *Ne* = dosyanın erişim politikası. *Nasıl* = inode'daki 9+3 bit; `chmod` `chmod()` syscall'ıyla değiştirir. *Ne zaman uygulanır* = her `open()`/`execve()` sırasında kernel tarafından. *Neden bu model* = 1970'lerin basit, hızlı, düşük maliyetli erişim kontrolü — çoğu senaryoya yeter; yetmeyince ACL/MAC devreye girer. *Kim* = izinleri sadece dosyanın **sahibi** ve **root** değiştirebilir; sahiplik (`chown`) değiştirmek **root** ister (aksi halde kullanıcı dosyayı başkasının üstüne yıkıp kota/sorumluluktan kaçabilirdi).
 
 ```bash
-chmod 750 dosya          # sayısal (octal) gösterim: owner=rwx(7), group=rx(5), other=hiçbiri(0)
-chmod u+x,g-w dosya      # sembolik gösterim: owner'a execute EKLE, group'tan write ÇIKAR
-chmod -R 755 dizin/      # -R: dizin ve altındaki HER ŞEYİ recursive uygula
+chmod 750 dosya          # octal: owner=rwx(7), group=rx(5), other=yok(0)
+chmod u+x,g-w dosya      # sembolik: owner'a execute EKLE, group'tan write ÇIKAR
+chmod -R 755 dizin/      # -R: dizin ve altındaki HER ŞEY
+chmod g=rX dizin/        # büyük X: sadece zaten çalıştırılabilir olan / dizinlere x uygula (dosyaları atlar)
 
-chown ucp:sudo dosya     # sahibi ucp, grubu sudo yap (kullanıcı:grup birlikte)
-chown ucp dosya          # sadece sahibi değiştir, grup dokunulmaz
+chown ucp:sudo dosya     # sahip ucp, grup sudo (kullanıcı:grup birlikte)
+chown ucp dosya          # sadece sahibi değiştir
+chown -R ucp:ucp /home/ucp   # recursive sahiplik düzeltme
 chgrp sudo dosya         # sadece grubu değiştir — chown'un grup-only kısayolu
 ```
 
-Üç ana bitin dışında iki özel bit daha önemlidir: **setuid** (`chmod u+s`) — çalıştırılabilir bir dosyaya konursa, o programı **kim çalıştırırsa çalıştırsın**, program **sahibinin** UID'siyle çalışır (`passwd` komutunun kendisi root'a ait ve setuid'lidir — bu sayede normal kullanıcı `/etc/shadow`'a yazabilir); **sticky bit** (`chmod +t`) — bir dizine konursa, o dizindeki dosyaları **sadece dosyanın sahibi** (dizinin sahibi değil) silebilir (`/tmp`'nin `drwxrwxrwt` izninin sonundaki `t` budur — herkes yazabilsin ama birbirinin dosyasını silemesin diye).
+**Üç özel bit (mekanizması sık atlanan kısım):**
+- **setuid (`chmod u+s`):** çalıştırılabilir bir dosyaya konursa, o programı **kim çalıştırırsa çalıştırsın effective UID'si dosyanın sahibinin** olur. `passwd` root'a ait ve setuid'lidir — bu sayede normal kullanıcı `/etc/shadow`'a (640, root:shadow) **kendi parolasını** yazabilir; program içeride sadece o kullanıcının satırını değiştirir. Kötüye kullanımı büyük risktir; `find / -perm -4000 2>/dev/null` ile sistemdeki tüm setuid binary'lerini denetle.
+- **setgid:** bir **dizine** konursa, o dizinde oluşturulan dosyalar **oluşturanın birincil grubunu değil, dizinin grubunu** devralır — ekip paylaşımlı dizinlerin klasik kurulumu.
+- **sticky bit (`chmod +t`):** bir dizine konursa, o dizindeki dosyaları **sadece dosyanın sahibi** (ya da dizin sahibi / root) silebilir. `/tmp`'nin `drwxrwxrwt` iznindeki `t` budur — herkes yazsın ama birbirinin dosyasını silemesin.
 
 ### ACL — `setfacl` ve `getfacl`
 
-Klasik `rwx` modelinin temel bir kısıtı var: bir dosyaya **tam olarak bir** sahip ve **tam olarak bir** grup tanımlayabilirsin. "Bu dosyayı sahibi dışında **başka belirli bir kullanıcıya da** yazma izni ver, ama geri kalan herkese kapalı kalsın" gibi bir isteği klasik izinlerle karşılayamazsın — bunun için ya kullanıcıyı gruba eklemen (ki bu grubun DİĞER tüm dosyalarına da erişim açar, istenmeyen yan etki) ya da **ACL (Access Control List)** kullanman gerekir. ACL, klasik 3 sınıfın üzerine **istediğin sayıda ek kullanıcı/grup kuralı** ekleyebilmeni sağlar.
+**Neden var (tasarım gerekçesi):** klasik modelin temel kısıtı — bir dosyaya **tam bir** sahip ve **tam bir** grup atanabilir. "Bu dosyaya sahibi dışında **bir belirli kullanıcıya daha** yazma izni ver, geri kalan herkese kapalı kalsın" isteğini klasik izinlerle karşılayamazsın: ya kullanıcıyı gruba eklersin (grubun **diğer tüm** dosyalarına da erişim açılır — istenmeyen yan etki), ya **ACL** kullanırsın. ACL, klasik 3 sınıfın üzerine **istediğin sayıda ek kullanıcı/grup kuralı** ekler.
+
+**Mekanizma:** ACL girdileri, dosyanın bulunduğu dosya sisteminin **genişletilmiş öznitelik (extended attribute)** alanında (`system.posix_acl_access`) saklanır — dosya sisteminin ACL desteğiyle mount edilmiş olması gerekir (modern ext4/xfs varsayılan destekler). Linux uygulaması **POSIX 1003.1e taslak 17**'ye dayanır (standart resmen çekilse de Linux tam kümeyi uygular).
 
 ```bash
-getfacl dosya.txt                         # o dosyanın tüm ACL girdilerini göster
-setfacl -m u:ege:rwx dosya.txt            # kullanıcı 'ege'ye özel olarak rwx ver (-m = modify)
-setfacl -m g:proje-ekibi:rx dosya.txt     # 'proje-ekibi' grubuna özel olarak rx ver
-setfacl -x u:ege dosya.txt                # ege'nin özel kuralını kaldır (-x = remove entry)
-setfacl -b dosya.txt                      # dosyadaki TÜM ACL girdilerini temizle (-b = remove all)
-
-setfacl -d -m u:ege:rwx dizin/            # -d = "default" ACL: dizinin ALTINDA yeni oluşan
-                                           # her dosya/alt dizin bu kuralı OTOMATİK devralır
-setfacl -R -m u:ege:rwx dizin/            # -R = recursive, mevcut tüm içeriğe uygula
+getfacl dosya.txt                         # tüm ACL girdilerini göster
+setfacl -m u:ege:rwx dosya.txt            # kullanıcı 'ege'ye özel rwx (-m = modify)
+setfacl -m g:proje-ekibi:rx dosya.txt     # 'proje-ekibi' grubuna özel rx
+setfacl -x u:ege dosya.txt                # ege'nin özel kuralını kaldır (-x)
+setfacl -b dosya.txt                      # TÜM ACL girdilerini temizle (-b)
+setfacl -d -m u:ege:rwx dizin/            # -d = "default" ACL: dizin ALTINDA yeni oluşanlar bunu DEVRALIR
+setfacl -R -m u:ege:rwx dizin/            # -R = mevcut tüm içeriğe uygula
 ```
 
-`ls -l` çıktısında izin bitlerinin sonunda bir **`+`** işareti görürsen ("`rwxr-x---+`"), bu dosyada klasik 9 bitin **ötesinde** ek ACL kuralları olduğunun işaretidir — `getfacl` ile detayını görürsün. ACL'de ayrıca bir **mask** girdisi vardır: grup ve ek kullanıcı/grup kurallarının **üst sınırını** belirler (bir kuralda `rwx` yazsa bile mask `r-x` ise etkin izin `r-x`'e düşer) — bu, `chmod g=...` komutunun ACL'li bir dosyada aslında mask'ı değiştirdiğini anlamak için önemlidir.
+`ls -l` çıktısında izin bitlerinin sonunda bir **`+`** ("`rwxr-x---+`") → bu dosyada klasik 9 bitin ötesinde ACL kuralları var; `getfacl` ile detay.
+
+**`mask` girdisi (kritik):** grup + ek kullanıcı/grup kurallarının **etkin üst sınırını** belirler. Bir kuralda `rwx` yazsa bile `mask` `r-x` ise etkin izin `r-x`'e düşer. Adlandırılmış bir kullanıcı/grup girdisi eklediğinde `setfacl` mask'ı **otomatik** ekler. `chmod g=...` ACL'li bir dosyada aslında **mask'ı** değiştirir — bu yüzden ACL'li dosyalarda `chmod` beklenmedik görünebilir.
 
 ### Zorunlu erişim kontrolü — SELinux ve AppArmor
 
-Buraya kadar gördüğümüz her şey (`chmod`, `chown`, ACL) **DAC (Discretionary Access Control — isteğe bağlı erişim kontrolü)** kategorisindedir: dosyanın **sahibi** izinleri istediği gibi belirler, hatta root her şeyi görmezden gelebilir. **MAC (Mandatory Access Control — zorunlu erişim kontrolü)** ise bunun üstüne, **kullanıcının/sahibin isteğinden bağımsız**, sistem çapında merkezi bir politika ekler — root olsan bile MAC politikası izin vermiyorsa o işlemi yapamazsın. Bunun amacı: bir servis (örn. web sunucusu) açık bulunup ele geçirilse bile, MAC politikası o sürecin **sadece** kendi ait olduğu dosyalara dokunabilmesini garanti eder.
+**DAC vs MAC (temel kavram):** buraya kadar her şey (`chmod`, `chown`, ACL) **DAC (Discretionary Access Control)** — dosyanın **sahibi** izinleri istediği gibi belirler, root her şeyi aşabilir. **MAC (Mandatory Access Control)** bunun üstüne, **sahibin/kullanıcının isteğinden bağımsız**, sistem çapında merkezi bir politika ekler — root olsan bile MAC izin vermiyorsa yapamazsın. Kernel bu kontrolü **LSM (Linux Security Modules)** çerçevesiyle yapar: her güvenlik-duyarlı işlemde (dosya aç, port bağla, süreç başlat) DAC kontrolü **geçtikten sonra** bir de LSM kancasına sorar. Amaç: bir servis (örn. web sunucusu) ele geçirilse bile, politika o sürecin **sadece** kendi ait olduğu kaynaklara dokunabilmesini garanti eder — "hasar sınırlama".
 
-- **SELinux** (RHEL/Fedora/Rocky/Alma'nın varsayılanı): **etiket (label) tabanlı**. Her dosyaya ve her sürece bir **context** (`kullanici:rol:tip:seviye`) atanır; politika, hangi **tip**in hangi **tip**le nasıl etkileşebileceğini tanımlar (örn. `httpd_t` tipi süreç sadece `httpd_sys_content_t` etiketli dosyaları okuyabilir). Çok güçlü ve granüler ama politika yazımı/hata ayıklaması karmaşıktır.
+- **SELinux** (RHEL/Fedora/Rocky/Alma varsayılanı, **enforcing** modda): **etiket (label) tabanlı**. Her dosyaya ve sürece bir **context** (`kullanici:rol:tip:seviye`) atanır; politika hangi **tip**in hangi **tip**le nasıl etkileşebileceğini tanımlar (`httpd_t` süreci yalnız `httpd_sys_content_t` dosyaları okur). Çok granüler ama politika yazımı/hata ayıklaması karmaşık.
   ```bash
-  getenforce            # Enforcing / Permissive / Disabled durumunu göster
-  setenforce 0           # geçici olarak Permissive moda al (engellemez, sadece loglar) — hata ayıklarken kullanılır
-  ls -Z dosya             # dosyanın SELinux context'ini göster
+  getenforce            # Enforcing / Permissive / Disabled
+  sudo setenforce 0      # geçici Permissive (engellemez, loglar) — hata ayıklarken
+  ls -Z dosya             # dosyanın SELinux context'i
+  ps -eZ | grep httpd     # süreç context'i
+  sudo ausearch -m avc -ts recent   # son "engellendi" (AVC denial) kayıtları
   ```
-- **AppArmor** (Debian/Ubuntu'nun varsayılanı): **yol (path) tabanlı**. Her uygulama için ayrı, insan tarafından okunabilir bir **profil** dosyası (`/etc/apparmor.d/` altında) hangi dosya yollarına hangi izinlerle erişebileceğini listeler. SELinux'e göre daha basit yazılır/okunur, ama dosya yolu değişirse (örn. symlink ile) etrafından dolanılabilme riski SELinux'e göre biraz daha fazladır.
+- **AppArmor** (Debian **10 buster**'dan / Ubuntu'dan itibaren varsayılan): **yol (path) tabanlı**. Her uygulama için `/etc/apparmor.d/` altında, insan-okunur bir **profil** hangi yollara hangi izinle erişileceğini listeler. Yazması/okuması SELinux'ten kolay; ama koruma dosya **yoluna** bağlı olduğundan, yol değişebilen (hardlink/symlink/mount trick) senaryolarda teorik olarak SELinux'ten biraz daha atlatılabilir.
   ```bash
-  aa-status              # hangi profillerin yüklü/enforce/complain modda olduğunu göster
-  aa-complain /path/prog  # bir profili "complain" moduna al — sadece loglar, engellemez (hata ayıklama)
-  aa-enforce /path/prog   # profili tekrar zorlayıcı (enforce) moda al
+  sudo aa-status              # yüklü/enforce/complain profiller
+  sudo aa-complain /path/prog  # profili "complain" moduna al (sadece loglar)
+  sudo aa-enforce /path/prog   # tekrar zorlayıcı moda al
   ```
 
 > [!TIP]
-> **İkisi de aynı anda tek sistemde çalışmaz — dağıtım ailesine göre biri etkindir. Bir "Permission denied" hatası aldığında ve `ls -l`/ACL tarafında hiçbir sorun görünmüyorsa, bir sonraki şüpheli her zaman SELinux/AppArmor olmalı (`getenforce` ya da `aa-status` ile hemen kontrol edilir).**
+> **İkisi de aynı anda **tek sistemde etkin olmaz** — dağıtım ailesine göre biri. Bir "Permission denied" aldığında ve `ls -l`/ACL tarafında sorun yoksa, bir sonraki şüpheli **her zaman** SELinux/AppArmor: `getenforce` ya da `sudo aa-status` ile hemen kontrol et. SELinux'te "geçici olarak kapatıp test et" için `setenforce 0`, AppArmor'da tek profil için `aa-complain`.**
 
 ### Kullanıcı ekleme/silme — `adduser`/`useradd`, `deluser`/`userdel`
 
-Debian ailesinde **iki katman** vardır: `useradd`/`userdel` düşük seviyeli, minimal C binary'leridir (hiçbir soru sormaz, home dizini bile oluşturmaz — parametre vermezsen). `adduser`/`deluser` ise bunların üzerine yazılmış, **interaktif ve dostane** Perl script'leridir (otomatik home dizini açar, otomatik uygun UID/GID seçer, kullanıcıyla aynı adda bir grup oluşturur, parola sorar). RHEL ailesinde ise `adduser` genelde `useradd`'a giden bir symlink'ten ibarettir — o dostane katman yoktur.
+**İki katman (Debian ailesi):**
+- `useradd` / `userdel` — düşük seviyeli, minimal C binary'leri; hiçbir soru sormaz, parametre vermezsen home dizini bile açmaz. POSIX'e yakın, her dağıtımda var.
+- `adduser` / `deluser` — bunların üzerine yazılmış, **interaktif ve dostane** Perl script'leri: otomatik home açar, uygun UID/GID seçer, kullanıcıyla aynı adda grup oluşturur, parola sorar, `/etc/skel` içeriğini kopyalar.
 
-**`useradd` sık kullanılan parametreler:**
+RHEL ailesinde `adduser` genelde `useradd`'a **symlink**'tir — o dostane katman yoktur; RHEL'de standart yol doğrudan `useradd`'dır.
 
-| Parametre | Anlamı |
-|---|---|
-| `-m` | home dizinini oluştur (vermezsen sadece `/etc/passwd`'ye kayıt açılır, dizin açılmaz) |
-| `-s /bin/bash` | giriş shell'i belirle |
-| `-u 1500` | UID'yi elle belirle (vermezsen sıradaki boş UID otomatik seçilir) |
-| `-g grup` | birincil grubu belirle (vermezsen genelde kullanıcı adıyla aynı yeni bir grup açılır) |
-| `-G grup1,grup2` | ikincil (supplementary) gruplara ekle, virgülle ayrılmış |
-| `-c "Açıklama"` | GECOS alanı (tam ad/açıklama) |
-| `-d /ozel/yol` | home dizini için özel bir yol belirle |
-| `-e YYYY-AA-GG` | hesabın **kesin sona ereceği** tarih |
-| `-r` | **sistem hesabı** oluştur — normal UID aralığının altından (genelde <1000) bir UID atanır, parola yaşlandırma uygulanmaz; servis hesapları için kullanılır |
+**5N1K:** *Ne* = yeni bir kimlik + home + grup üyeliği oluşturma. *Nasıl* = `/etc/passwd` + `/etc/shadow` + `/etc/group`'a satır ekleme, home dizini + `/etc/skel` kopyası. *Ne zaman* = insan kullanıcı (login'li) ya da servis hesabı (`-r`, nologin) gerektiğinde. *Neden iki araç* = alt katman script'lenebilir/öngörülebilir olsun, üst katman insan için pratik olsun. *Kim* = root (sistem dosyalarına yazma).
 
-**`userdel` sık kullanılan parametreler:**
+**`useradd` sık parametreler:** `-m` (home oluştur), `-s /bin/bash` (shell), `-u 1500` (UID), `-g grup` (birincil grup), `-G g1,g2` (ikincil gruplar), `-c "Açıklama"` (GECOS), `-d /ozel/yol` (özel home), `-e YYYY-AA-GG` (hesap bitiş tarihi), `-r` (**sistem hesabı** — <1000 UID, parola yaşlandırma yok, servisler için).
 
-| Parametre | Anlamı |
-|---|---|
-| `-r` | home dizinini ve mail spool'unu da **birlikte** sil (vermezsen sadece kullanıcı kaydı silinir, dosyaları kalır) |
-| `-f` | kullanıcı hâlâ oturum açmış/dosyaları başka yerde kullanılıyor olsa bile **zorla** sil |
+**`userdel`:** `-r` (home + mail spool'u da sil), `-f` (kullanıcı oturum açmış/dosyaları kullanımda olsa bile zorla).
 
-`adduser kullanici` ve `deluser --remove-home kullanici` bu ikisinin Debian'daki dostane karşılıklarıdır.
+`adduser kullanici` ve `deluser --remove-home kullanici` Debian'daki dostane karşılıklardır.
 
 ### UID/GID ve farklı ID çeşitleri
 
-- **UID 0** her zaman **root**'tur — isim değil, bu **numara** kontrol edilir; UID'si 0 olan HERHANGİ bir kullanıcı adı root yetkisine sahiptir.
-- **Sistem/servis hesapları:** genelde `1-999` aralığında (Debian) UID'ler — bir servis kendi dosyalarının sahibi olsun diye açılır, login shell'i genelde `/usr/sbin/nologin`'dir (biri o hesapla giriş yapamasın diye).
-- **Normal kullanıcılar:** `1000` ve üzeri (Debian ve modern RHEL8+; eski RHEL'de `500`+). Bu eşik `/etc/login.defs` içindeki `UID_MIN`/`UID_MAX` ile tanımlıdır.
-- **Birincil (primary) grup:** `/etc/passwd`'nin 4. alanı — yeni oluşturduğun bir dosyanın **otomatik grubu** budur.
-- **İkincil (supplementary) gruplar:** `/etc/group`'ta listelenen, `usermod -aG` veya `useradd -G` ile eklenen ek gruplar — o kullanıcının **ilave olarak** sahip olduğu yetkiler.
+- **UID 0 = root** — kontrol edilen **isim değil, numaradır**; UID'si 0 olan **herhangi bir** kullanıcı adı tam yetkilidir.
+- **Sistem/servis hesapları:** genelde `1-999` (Debian) — bir servis kendi dosyalarının sahibi olsun diye; login shell'i `/usr/sbin/nologin`.
+- **Normal kullanıcılar:** `1000` ve üzeri (Debian ve modern RHEL 8+; eski RHEL'de `500`+). Eşik `/etc/login.defs`'teki `UID_MIN`/`UID_MAX`.
+- **Birincil grup:** `/etc/passwd` 4. alan — yeni oluşturduğun dosyanın **otomatik grubu**.
+- **İkincil gruplar:** `/etc/group`'ta listelenen, `usermod -aG` / `useradd -G` ile eklenenler — **ilave** yetkiler.
 
-Bir sürecin içinde aslında **üç farklı** UID kavramı vardır (bunu `id` komutu ile hepsi bir arada görülür):
+> [!WARNING]
+> **`usermod -aG sudo ege` — **`-a` (append) olmadan** `-G` yazarsan kullanıcının **mevcut tüm ikincil gruplarını siler**, sadece yenisini bırakır. `-a` her zaman `-G` ile birlikte.**
+
+**Bir sürecin içinde üç farklı UID vardır** (`id` hepsini gösterir):
 ```bash
 id
-# uid=1000(ucp) gid=1000(ucp) groups=1000(ucp),27(sudo),... 
+# uid=1000(ucp) gid=1000(ucp) groups=1000(ucp),27(sudo),...
 ```
 - **real UID** — süreci **kimin başlattığı**.
-- **effective UID** — süreç şu an **hangi kimliğin yetkileriyle** çalışıyor (setuid bir binary çalıştırdığında real ve effective farklılaşır — `passwd` örneğinde real=sen, effective=root).
-- **saved UID** — bir setuid programın, yetkiyi geçici olarak bırakıp (`seteuid`) sonra tekrar geri alabilmesi için sakladığı yedek kimlik.
+- **effective UID** — süreç şu an **hangi kimliğin yetkileriyle** çalışıyor (setuid binary'de real ≠ effective — `passwd`'de real=sen, effective=root).
+- **saved UID** — setuid bir programın yetkiyi geçici bırakıp (`seteuid`) sonra geri alabilmesi için sakladığı yedek. İyi yazılmış setuid programlar "sadece kritik anda root ol, gerisinde düş" için bunu kullanır.
 
 ```bash
-whoami         # sadece etkin kullanıcı adını göster
-id -un         # aynı şey, id komutuyla
-groups         # kullanıcının üye olduğu TÜM grupları listele
+whoami         # sadece etkin kullanıcı adı
+id -un         # aynı şey, id ile
+groups         # üye olunan TÜM gruplar
+newgrp proje   # geçici olarak birincil grubu değiştir (yeni oluşacak dosyalar için)
 ```
 
 ### `sudo` ile `su` arasındaki fark
 
-Bu ikisi sık karıştırılır ama **felsefeleri tamamen farklıdır**:
+**Tarihsel + tasarım gerekçesi:** `su` ("substitute user") Unix'in başından beri var — **tüm oturumu** başka bir kullanıcıya devreder. `sudo` ("superuser do" / "substitute user do") 1980'de SUNY/Buffalo'da Bob Coggeshall ve Cliff Spencer tarafından yazıldı; amacı **en az yetki (least privilege)** ilkesiydi: kullanıcı minimum yetkiyle çalışsın, sadece bir görev için gerektiğinde ve **sadece o komut süresince** yükselsin.
 
 | | `su` | `sudo` |
 |---|---|---|
-| Ne yapar | **Tüm oturumu** hedef kullanıcıya devret | **Tek bir komutu** başka kullanıcı olarak çalıştır |
-| Hangi parola istenir | **hedef** kullanıcının parolası (`su -` ile root'a geçmek için root'un parolasını bilmen gerekir) | **kendi** parolan (root'un parolasını hiç bilmene gerek yok) |
-| Yetki kapsamı | ya tam yetki ya hiç — ince ayar yok | `/etc/sudoers` ile **komut bazlı**, çok ince ayarlanabilir (bkz. aşağıdaki uygulamalı örnek) |
-| Denetim (audit) | sistemde sadece "X, Y'ye su yaptı" görünür, sonrasında ne yaptığı ayrı loglanmaz | **her çağrı** `/var/log/auth.log` (Debian) / `journalctl` üzerinden kaydedilir — kim, ne zaman, hangi komutu çalıştırdı |
-| Neden tercih edilir | tek kullanıcılı, kısa ömürlü sistemlerde hızlı bir yol | çok kullanıcılı gerçek sistemlerde **standart pratiktir** — root parolasını kimseyle paylaşmadan, kimin ne yaptığını denetlenebilir tutarak yetki devri sağlar |
+| Ne yapar | **tüm oturumu** hedef kullanıcıya devret | **tek komutu** başka kullanıcı olarak çalıştır |
+| Hangi parola | **hedef** kullanıcının parolası (root'a geçmek için root parolası gerekir) | **kendi** parolan (root parolasını bilmene gerek yok) |
+| Yetki kapsamı | ya tam ya hiç | `/etc/sudoers` ile **komut bazlı**, çok ince ayar |
+| Denetim (audit) | sadece "X, Y'ye su yaptı" görünür | **her çağrı** loglanır (`/var/log/auth.log` — Debian; `journalctl` / `/var/log/secure` — RHEL): kim, ne zaman, hangi komut |
+| Neden tercih | tek kullanıcılı, kısa ömürlü sistemde hızlı | çok kullanıcılı gerçek sistemde **standart**: root parolası paylaşılmadan, kim ne yaptı denetlenebilir yetki devri |
 
-`su -` ile `su` arasındaki fark da önemli: `-` (ya da `--login`) **tam bir login shell** ister — ortam değişkenlerini sıfırlar, hedef kullanıcının `.bashrc`/`.profile` dosyalarını çalıştırır, dizini onun home'una taşır. `-` olmadan **yetkiler** hedef kullanıcıya geçer ama **kendi** ortam değişkenlerin/çalışma dizinin kalır — bu bazen beklenmedik `PATH` sorunlarına yol açabilir.
+**`su -` ile `su` farkı:** `-` (ya da `--login`) **tam login shell** başlatır — ortam değişkenlerini sıfırlar, hedefin `.bashrc`/`.profile`'ını çalıştırır, dizini onun home'una taşır. `-` olmadan **yetkiler** geçer ama **senin** ortam değişkenlerin/çalışma dizinin kalır — beklenmedik `PATH` sorunları çıkabilir (`sudo -i` = `su -` benzeri tam login; `sudo -s` = sadece shell).
 
 ### `sudoers` ve `visudo`
 
-`sudoers`, `sudo` komutunun **kim neyi yapabilir** sorusunu cevapladığı kural dosyasıdır (`/etc/sudoers` ve `/etc/sudoers.d/` altındaki ek dosyalar). Bu dosyayı **asla** doğrudan `nano`/`vi` ile açma — bunun yerine `visudo` kullanılır, çünkü `visudo` dosyayı diske yazmadan önce **syntax kontrolü** yapar; sözdizimi bozuk bir `sudoers` dosyası, sistemde **kimsenin sudo kullanamamasına** yol açabilir (kilitlenme riski) — `visudo` bu felaketi engelleyen güvenlik ağıdır. Aşağıdaki uygulamalı örnekte bu dosyanın gerçek satır sözdizimini ayrıntılı görüyoruz.
+`sudoers` (`/etc/sudoers` + `/etc/sudoers.d/*`), `sudo`'nun "kim neyi yapabilir" kural dosyasıdır. **Asla** `nano`/`vi` ile doğrudan açma — `visudo` kullan: diske yazmadan önce **sözdizimi kontrolü** yapar. Bozuk bir `sudoers`, sistemde **hiç kimsenin sudo kullanamamasına** yol açar (kilitlenme) — `visudo` bu felaketi önleyen güvenlik ağıdır. `visudo -f /etc/sudoers.d/dosya` ile ayrı bir kural dosyası düzenlenir. Gerçek satır sözdizimi aşağıdaki Uygulamalı Örnek 1'de.
 
 ### Metin editörleri — `vi`, `vim`, `nano`
 
-- **`vi`**: 1976'dan kalma, **modal** (kip tabanlı) bir editördür — "Normal mod" (komutlar çalışır, harf tuşları metne yazılmaz) ve "Insert modu" (yazdığın gerçekten metne girer) arasında geçiş yaparak çalışılır. POSIX standardının bir parçası olduğu için **her Unix/Linux sisteminde garanti olarak bulunur** — bu yüzden bir sistem yöneticisi, hangi ortamda olursa olsun (minimal container, kurtarma modu, bozuk bir sunucu) en azından temel `vi` komutlarını bilmek zorundadır.
-- **`vim`** ("vi improved"): `vi`'nin sözdizimi vurgulama (syntax highlighting), çoklu geri alma (undo tree), eklenti (plugin) desteği gibi özelliklerle genişletilmiş hâlidir; modern dağıtımlarda `vi` komutu genelde doğrudan `vim`'e yönlendirilmiştir.
-- **`nano`**: kipsiz (modeless) çalışır — yazdığın her şey doğrudan metne girer, ekranın altında hangi tuşun ne işe yaradığı (`^X` = Ctrl+X gibi) sürekli görünür durur. Öğrenmesi çok daha kolaydır ama `vi`/`vim`'in klavyeden elini kaldırmadan hızlı düzenleme gücüne sahip değildir.
+**Tarihsel bağlam / tasarım (asıl anlatılması gereken):**
+- **`vi`** (1976, Bill Joy, Berkeley): önce `ex` adlı satır editörünü yazdı (`ed`'i geliştirerek), sonra 1977'de `ex`'e **tam ekran görsel mod** ekledi — `vi` aslında `ex`'in bir **modu**dur. **Modal** tasarımın nedeni o dönemin donanımıdır: yavaş seri terminaller ve **ok tuşu olmayan** klavyeler. İmleci `hjkl` ile, silmeyi `dd` ile yapmak, "her tuş bir komut" (Normal mod) ile "yazdığın metne girer" (Insert mod) ayrımı — az tuş vuruşuyla, ağ gecikmesine dayanıklı düzenleme için tasarlandı. `vi` + `ex` dili **POSIX / Single Unix Specification**'da standarttır — bu yüzden **her Unix/Linux'ta garanti** bulunur; minimal container, kurtarma modu, bozuk sunucu — sistem yöneticisi en azından temel `vi`'yi bilmek zorundadır.
+- **`vim`** ("Vi IMproved", 1991, Bram Moolenaar): `vi`'nin sözdizimi vurgulama, çoklu geri alma (undo tree), eklenti, çoklu pencere ile genişletilmiş hâli. Modern dağıtımlarda `vi` komutu genelde `vim`'in küçük bir yapılandırmasına (`vim-tiny`) ya da doğrudan `vim`'e yönlenir.
+- **`nano`** (1999, önce "TIP", Pine e-posta istemcisinin `pico` editörünün özgür klonu): **kipsiz (modeless)** — yazdığın her şey doğrudan metne girer; ekranın altında tuş kısayolları (`^X` = Ctrl+X) sürekli görünür. Öğrenmesi çok kolay; `vi`/`vim`'in "elini klavyeden kaldırmadan hızlı düzenleme" gücü yok. Modern dağıtımlarda `EDITOR`/`VISUAL` ayarlı değilse `nano` varsayılan editördür (`git commit`, `visudo` vb. onu açar).
 
-**Hayatta kalma komutları (`vi`/`vim`):**
+**`vi`/`vim` hayatta kalma komutları:**
 ```
-i          # Insert moduna geç (yazmaya başla)
-Esc        # Normal moda geri dön
-:wq        # kaydet ve çık (write + quit)
+i          # Insert moduna geç
+Esc        # Normal moda dön
+:wq        # kaydet ve çık   (:x aynı)
 :q!        # kaydetmeden zorla çık
-dd         # bulunduğun satırı sil
-yy         # satırı kopyala (yank)
-p          # kopyalanan/silinen satırı yapıştır
-/kelime    # ileri doğru ara
+:w !sudo tee %   # root yetkisi unutulduysa, çıkmadan sudo ile kaydet
+dd / yy / p # satır sil / kopyala / yapıştır
+/kelime    # ileri ara,  n = sonraki
+:set nu    # satır numaralarını göster
 ```
-
-**`nano` temelleri:** `Ctrl+O` (kaydet — "Write Out"), `Ctrl+X` (çık), `Ctrl+K` (satırı kes), `Ctrl+U` (yapıştır), `Ctrl+W` (ara).
+**`nano`:** `Ctrl+O` (kaydet — Write Out), `Ctrl+X` (çık), `Ctrl+K` / `Ctrl+U` (satır kes / yapıştır), `Ctrl+W` (ara), `Ctrl+\` (ara-değiştir).
 
 ### `less` / `more`
 
-İkisi de bir dosyayı ekrana **sayfa sayfa** basan "pager" programlarıdır ama `more` çok daha kısıtlıdır: sadece **ileri** doğru sayfalar, geri gitmek zordur/desteklenmez, dosya sonuna gelince otomatik çıkar. `less` ("less is more" şakalı isim), hem **ileri hem geri** kaydırma yapabilir (ok tuşları, Page Up/Down), dosyanın tamamını hafızaya önceden yüklemediği için **çok büyük dosyalarda/loglarda** bile hızlıdır, ve arama yapabilirsin:
+**Tarihsel gerekçe (ikili — asıl anlatılacak):** `more` önce vardı (BSD, 1970'ler) — dosyayı **sayfa sayfa ileri** basar, geri gitmek yok/zor, dosya sonunda otomatik çıkar. Mark Nudelman 1983–85'te `less`'i yazdı; motivasyonu **`more`'un geri kaydıramamasıydı** — isim de "backwards more" şakasından ("less is more"). Kritik tasarım farkı: `less` dosyanın **tamamını okumadan** görüntülemeye başlar — bu yüzden GB'larca log dosyasında bile anında açılır (Gün 2'deki `grep`'in `ed`'den ayrılma gerekçesiyle aynı fikir: büyük veriyi belleğe almadan işlemek).
+
+**5N1K:** *Ne* = dosyayı/akışı ekrana sığdırıp gezdiren "pager". *Nasıl* = sadece görünen kısmı + biraz tamponu okur; ileri/geri, arama, canlı takip. *Ne zaman* = uzun çıktıyı (log, `man`, `git log`, `journalctl`) incelerken — pek çok komut çıktısını otomatik `less`'e boru eder (`$PAGER`). *Neden `less`* = geri kaydırma + büyük dosyada hızlı açılış + arama. *Kim* = kullanıcı; salt görüntüler, dosyayı değiştirmez.
 
 ```bash
 less /var/log/syslog
-# içindeyken:  /hata     ileri doğru "hata" ara
-#              ?hata     geri doğru "hata" ara
-#              n         bir sonraki eşleşme
-#              G         dosyanın sonuna git
-#              g         dosyanın başına git
-#              q         çık
-less +F dosya.log        # tail -f gibi, dosyaya eklenen yeni satırları canlı takip et
+# içindeyken:
+#   /hata     ileri "hata" ara      ?hata   geri ara      n / N   sonraki / önceki eşleşme
+#   G / g     dosya sonu / başı
+#   F         "canlı takip" moduna geç (tail -f gibi) — Ctrl+C ile geri çık
+#   &hata     sadece "hata" GEÇEN satırları göster (grep gibi süz)
+#   q         çık
+less +F app.log       # doğrudan canlı takip modunda aç
+less -N dosya         # satır numaralarıyla
+journalctl -u ssh | less    # çoğu araç zaten otomatik less'e borular
 ```
 
 ### `history` — kullanım ve tips&trick'ler
 
-`history` komutu, o oturumda (ve `~/.bash_history` dosyasında kalıcı olarak) çalıştırdığın komutları **numaralı** listeler. Bu numarayı `!` ile birleştirerek uzun bir komutu **yeniden yazmadan** çağırabilirsin:
+**Mekanizma:** `history` bir program değil, kabuğun (bash) **builtin**'idir — çünkü geçmiş **kabuk sürecinin belleğindeki** bir listedir. Oturum kapanınca (ya da `history -a` ile) bu liste `~/.bash_history` dosyasına yazılır; yeni oturum açılışta okunur. `HISTSIZE` (bellekteki), `HISTFILESIZE` (dosyadaki) satır sayısını sınırlar; `HISTCONTROL=ignoredups:ignorespace` yinelenenleri ve boşlukla başlayan komutları (parola içeren komutları gizlemek için) atlar.
 
 ```bash
-history           # numaralı komut geçmişini göster
-!245               # 245 numaralı komutu ÇALIŞTIR (aynen, düzenlemeden)
-!245:p             # sadece YAZDIR, çalıştırma — önce göz ile kontrol etmek için
-!!                 # bir önceki komutu tekrar çalıştır
-!-3                # şu anki konumdan 3 komut GERİYE git
-!find              # 'find' ile BAŞLAYAN en son komutu çalıştır
+history           # numaralı komut geçmişi
+!245               # 245 numaralı komutu ÇALIŞTIR (aynen)
+!245:p             # sadece YAZDIR, çalıştırma — önce göz kontrolü
+!!                 # bir önceki komut
+sudo !!            # bir önceki komutu sudo ile tekrarla (çok sık)
+!-3                # 3 komut geriye
+!find              # 'find' ile BAŞLAYAN en son komut
+^eski^yeni         # önceki komutta "eski"yi "yeni" ile değiştirip çalıştır
+history -d 245     # geçmişten 245'i sil (yanlışlıkla parola yazdıysan)
 ```
 
-Gün 5'in kendi transkriptinde de tam olarak bu kullanılmış: `history` çıktısındaki 23 numaralı `nano ~/.bashrc` komutu, `!23` ile tekrar çağrılmış (satır ~300 civarı).
-
 > [!WARNING]
-> **`!N` yazıp Enter'a bastığında komut **önce sana göstermeden, doğrudan çalışır** — numarayı yanlış hatırlarsan riskli olabilir (örn. istemeden bir `rm` komutunu tetiklemek). `shopt -s histverify` (`~/.bashrc`'ye eklenebilir) bunu güvenli hâle getirir: `!N` yazınca komut hemen çalışmaz, genişletilmiş hâli komut satırına yazılır, sen tekrar Enter'a basmadan (istersen düzenleyerek) çalışmaz.**
+> **`!N` yazıp Enter'a basınca komut **önce göstermeden doğrudan çalışır** — numarayı yanlış hatırlarsan riskli (istemeden bir `rm`). `shopt -s histverify` (`~/.bashrc`'ye) bunu güvenli yapar: `!N` genişletilmiş hâli komut satırına yazılır, sen ikinci kez Enter'a basana (istersen düzenleyene) kadar çalışmaz.**
 
-Diğer faydalı bir yöntem: **`Ctrl+R`** — geçmişte yazdıkça canlı arama yapar (reverse-i-search), bulduğun komutu Enter'a basmadan önce düzenleyebilirsin; numarayı hatırlamana hiç gerek kalmaz.
+**Numara ezberlemeden:** **`Ctrl+R`** — yazdıkça geriye doğru canlı arama (reverse-i-search); bulunca Enter'dan önce düzenleyebilirsin. `Ctrl+G` ile aramadan çık.
 
 ### `locate`
 
-`find` gibi dosya arar ama **tamamen farklı bir mantıkla** çalışır: `find`, çalıştığı anda dosya sistemini **canlı olarak** tarar (her seferinde yavaş ama her zaman güncel); `locate` ise önceden **oluşturulmuş bir indeks veritabanını** (`/var/lib/mlocate/mlocate.db`) sorgular — bu yüzden **çok hızlıdır** ama veritabanı genelde günde bir kez `cron` ile güncellendiği için, **az önce oluşturulmuş** bir dosyayı bulamayabilir (indeks henüz güncellenmediyse).
+**Mekanizma / tasarım (ikili: `find` vs `locate`):** `find` çalıştığı anda dosya sistemini **canlı** tarar — her zaman güncel ama her seferinde yavaş. `locate` ise önceden **`updatedb` ile üretilmiş bir indeks veritabanını** sorgular — **çok hızlı** (disk gezmez) ama veritabanı genelde günde bir `systemd timer` (`updatedb.timer`) ile güncellendiğinden, **az önce oluşturulan** bir dosyayı bulamayabilir.
+
+- **5N1K:** *Ne* = önceden indekslenmiş dosya adı araması. *Nasıl* = `updatedb` tüm dosya sistemini gezip sıkıştırılmış bir isim veritabanı yazar; `locate` onu sorgular. *Ne zaman* = "şu isimli dosya sistemde nerede" sorusu, kesin güncellik gerekmiyorsa. *Neden `find` yerine* = interaktif hız (büyük diskte `find /` saniyeler-dakikalar sürer, `locate` milisaniye). *Kim* = `updatedb` root'la çalışır ama root'un göremeyeceği yolları veritabanından **kırpar** (`plocate`/`mlocate` her kullanıcıya sadece erişebileceği yolları gösterir).
+
+> [!NOTE]
+> **Modern Debian (12'den itibaren) ve Fedora artık `mlocate` yerine **`plocate`** kullanır — aynı komut arayüzü, çok daha hızlı ve küçük veritabanı. Kurulu olmayabilir: `sudo apt install plocate` / `sudo dnf install plocate`.**
 
 ```bash
-locate dosya_adi        # indeksten ara (hızlı ama güncelliği garanti değil)
+locate dosya_adi        # indeksten ara
+locate -i rapor          # büyük/küçük harf duyarsız
+locate -e dosya_adi      # sadece HÂLÂ VAR OLAN sonuçları göster (silinmişleri ele)
 sudo updatedb            # indeksi elle, hemen güncelle
-locate -i rapor          # büyük/küçük harf duyarsız ara
 ```
 
-### `curl` ve `wget` — ikisi de önemli, ama farklı amaçlar için
+### `curl` ve `wget` — ikisi de önemli, farklı amaçlar için
 
-İkisi de HTTP(S)/FTP üzerinden veri çeker ama tasarım amaçları farklıdır:
+**Tasarım felsefesi farkı (asıl anlatılacak — ikili):**
+- **`wget`** (GNU projesi): tek amacı **dosya indirmek** — aldığı içeriği varsayılan olarak **diske kaydeder**, `cp` gibi davranır. HTML'i **ayrıştırıp** bir siteyi özyinelemeli (recursive) indirebilir, yarım kalan indirmeyi sürdürebilir. Tek başına çalışan bir komut.
+- **`curl`** (Daniel Stenberg, bağımsız proje): önce bir **kütüphane** (`libcurl`) olarak tasarlandı, komut satırı onun ince bir arayüzü. Onlarca protokol destekler, aldığı veriyi varsayılan olarak **stdout'a basar** (`cat` gibi, "her şey bir boru") — asıl gücü **API'lerle konuşmak** (özel method/header/body). "Veriyi asla ayrıştırmaz, ne dersen onu indirir."
 
-- **`wget`**: **dosya indirmek** için tasarlanmıştır — varsayılan davranışı, aldığı içeriği doğrudan **diske kaydetmektir**. Bir siteyi bütünüyle (recursive) indirip yerel bir kopyasını çıkarmak gibi işlerde güçlüdür.
-- **`curl`**: çok daha genel amaçlı bir **veri transfer** aracıdır — çok daha fazla protokolü destekler, ve varsayılan olarak aldığı içeriği **ekrana (stdout) basar**, dosyaya değil — bu onu script'lerde, API'lerle konuşurken (özel header/method/body gönderme) kullanmaya uygun hale getirir.
+Özetle: **`wget` ≈ `cp` (indir ve sakla, siteyi aynala); `curl` ≈ `cat` (akışı stdout'a ver, script/API)**.
 
 ```bash
 # curl
 curl -O https://site.com/dosya.tar.gz   # -O: uzak dosyanın adıyla KAYDET
-curl -o yerel_ad.tar.gz https://...     # -o: özel bir isimle kaydet
+curl -o yerel.tar.gz https://...        # -o: özel isimle kaydet
 curl -L https://kisa.link/x              # -L: yönlendirmeleri (redirect) TAKİP ET
-curl -I https://site.com                 # -I: sadece HTTP header'ları al (HEAD isteği)
+curl -I https://site.com                 # -I: sadece HTTP başlıkları (HEAD)
+curl -fsSL https://site.com/script.sh    # -f hata kodunda sessizce başarısız ol, -sS ilerlemeyi gizle ama hatayı göster, -L redirect
 curl -X POST -H "Content-Type: application/json" -d '{"k":"v"}' https://api.site.com
-                                          # -X: HTTP metodu, -H: özel header, -d: gönderilecek veri (POST body)
-curl -s https://site.com                 # -s: sessiz (ilerleme çubuğunu/hata çıktısını gizle)
-curl -v https://site.com                 # -v: verbose — istek/yanıt detaylarını (header dahil) göster
+curl -w '%{http_code}\n' -o /dev/null -s https://site.com   # sadece HTTP durum kodunu al (sağlık kontrolü)
 
 # wget
-wget https://site.com/dosya.iso          # varsayılan: uzak dosya adıyla diske kaydet
-wget -O ozel_ad.iso https://...          # -O: özel bir isimle kaydet
-wget -c https://.../buyuk_dosya.iso      # -c: yarım kalan indirmeye KALDIĞI YERDEN devam et
-wget -r -np https://site.com/dizin/      # -r: recursive indir, -np: üst dizinlere ÇIKMA
+wget https://site.com/dosya.iso          # varsayılan: uzak ad ile diske kaydet
+wget -O ozel.iso https://...             # -O: özel isim
+wget -c https://.../buyuk.iso            # -c: yarım indirmeye KALDIĞI YERDEN devam
+wget -r -np -k https://site.com/dizin/   # -r recursive, -np üst dizine çıkma, -k linkleri yerelde çalışır yap
+wget -q -O- https://site.com | grep X    # -O- : stdout'a bas (curl gibi davrandır)
 ```
+
+> [!WARNING]
+> **`curl ... | sudo bash` (kur script'ini doğrudan çalıştırma) yaygın ama riskli — indirdiğin şeyi **önce oku**. `curl -fsSL URL -o kur.sh; less kur.sh; sudo bash kur.sh`.**
 
 ### `diff`
 
-İki dosyayı satır satır karşılaştırır, sadece **farkları** gösterir — özdeş satırları tekrar basmaz.
+İki dosyayı satır satır karşılaştırır, sadece **farkları** gösterir. Mekanizması (LCS / Hunt–McIlroy) ve tarihi Gün 2'de işlendi: [Gün 2#`diff` — iki dosyayı karşılaştırma](Gün%202.md#diff-iki-dosyayı-karşılaştırma). Burada yeni olan bayrak kombinasyonu:
 
 ```bash
-diff dosya1 dosya2          # varsayılan format: '<' ilk dosyada, '>' ikinci dosyada olan satırlar
-diff -u dosya1 dosya2        # unified format: '-'/'+' işaretli, git/patch'in kullandığı standart format
-diff -Nur dizin1/ dizin2/    # -r: dizinleri recursive karşılaştır, -N: bir tarafta OLMAYAN dosyayı boşmuş gibi say,
-                              # -u: unified format — iki dizin ağacını topluca karşılaştırmak için klasik kombinasyon
+diff dosya1 dosya2          # varsayılan: '<' ilk dosyada, '>' ikinci dosyada
+diff -u dosya1 dosya2        # unified format: '-'/'+', git/patch standardı
+diff -Nur dizin1/ dizin2/    # -r recursive, -N bir tarafta OLMAYANI boş say, -u unified
+                              # → iki dizin ağacını topluca karşılaştırmanın klasik kombinasyonu
+diff -y dosya1 dosya2        # yan yana (side-by-side) göster
+diff <(komut1) <(komut2)     # iki komutun ÇIKTISINI karşılaştır (process substitution)
 ```
 
-Gün 5'in transkriptinde tam olarak `diff -Nur /home/ege/test ~/.bashrc` şeklinde kullanılmış — burada aslında bir dosya ile bir dosya karşılaştırılıyor (dizin değil), `-r`/`-N` bu durumda etkisiz kalır ama zarar da vermez; `-u` kısmı gerçek işi yapan, okunabilir fark çıktısını üreten bayraktır.
+Gün 5 transkriptinde `diff -Nur /home/ege/test ~/.bashrc` kullanılmış — burada aslında bir **dosya** ile bir **dosya** karşılaştırılıyor; `-r`/`-N` bu durumda etkisiz kalır (zarar da vermez), asıl işi yapan `-u` (okunabilir fark çıktısı).
 
 ### Uygulamalı Örnek 1 — Kısıtlı sudo yetkisi (1. ödevin çözümü)
 
-Standart bir "kısıtlı sudo yetkisi" (privilege delegation) senaryosu: belirli bir kullanıcıya, sadece belirli bir komutu (ve sadece belirli bir argümanla) root yetkisiyle çalıştırma izni vermek. Debian 13'te adım adım:
+Standart bir "yetki delegasyonu" senaryosu: belirli bir kullanıcıya, sadece belirli bir komutu (ve sadece belirli bir argümanla) root yetkisiyle çalıştırma izni. Debian 13'te adım adım:
 
 **Adım 1 — Kullanıcıyı oluştur:**
 ```bash
 sudo useradd -m -s /bin/bash kisitli_kullanici
 sudo passwd kisitli_kullanici
 ```
-- `-m` → home dizinini otomatik oluştur (`/home/kisitli_kullanici`). Bu olmadan `useradd` sadece `/etc/passwd`'ye kayıt açar, dizin yaratmaz.
-- `-s /bin/bash` → giriş shell'i olarak bash ata; belirtmezsen dağıtıma göre `/bin/sh` ya da hiç shell (`/usr/sbin/nologin`) atanabilir.
+- `-m` → home dizinini oluştur. Olmadan sadece `/etc/passwd`'ye kayıt açılır.
+- `-s /bin/bash` → giriş shell'i; belirtmezsen dağıtıma göre `/bin/sh` ya da `nologin`.
 
-**Önemli:** Bu kullanıcı **hiçbir grupla** (özellikle `sudo` grubuyla) ilişkilendirilmiyor — `sudo` grubuna eklemek zaten sınırsız yetki verir; onun yerine `sudoers` dosyasında **komut bazlı** izin tanımlanıyor.
+**Önemli:** Bu kullanıcı **hiçbir gruba** (özellikle `sudo`'ya) eklenmiyor — `sudo` grubu zaten sınırsız yetki verir; onun yerine `sudoers`'ta **komut bazlı** izin tanımlanıyor (least privilege).
 
-**Adım 2 — sudoers kuralını yaz (asıl kısım):**
-
-`visudo` kullanmak zorunludur — doğrudan `/etc/sudoers`'ı `nano`/`vi` ile açma, çünkü `visudo` kaydetmeden önce syntax kontrolü yapar; sözdizimi hatalı bir sudoers dosyası **herkesin sudo kullanamamasına** yol açabilir.
-
+**Adım 2 — sudoers kuralı (asıl kısım):**
 ```bash
 sudo visudo -f /etc/sudoers.d/kisitli_kullanici
 ```
+**Neden `/etc/sudoers.d/` altında ayrı dosya:** modülerlik (her kural ayrı dosya), ana `/etc/sudoers`'a dokunmama (hata riski), kolay kaldırma (dosyayı sil) — `/etc/cron.d/`, `/etc/sudoers.d/` deseninin aynısı (Gün 6'da tekrar).
 
-**Neden `/etc/sudoers.d/` altında ayrı dosya, ana `/etc/sudoers` değil?**
-- Modülerlik: her kullanıcı/kural için ayrı dosya, karışıklığı önler.
-- Ana `/etc/sudoers` dosyasına hiç dokunulmaz, hata riski azalır.
-- Silmek istendiğinde sadece o dosya kaldırılır.
-
-Dosyaya şu satır yazılır:
+Dosyaya:
 ```
 kisitli_kullanici ALL=(root) NOPASSWD: /usr/bin/rnano /etc/wgetrc
 ```
 
 | Parça | Anlamı |
 |---|---|
-| `kisitli_kullanici` | kurala tabi olan kullanıcı |
-| `ALL=` | bu kuralın geçerli olduğu **host** — sudoers dosyaları birden fazla makine arasında paylaşılabildiği için host bazlı çalışır; tek makinede `ALL` sorun olmaz |
-| `(root)` | komut **hangi kullanıcı kimliğiyle** çalıştırılacak |
-| `NOPASSWD:` | bu komut için parola sorulmasın (çıkarılırsa her seferinde kendi parolasını girmesi zorunlu olur — güvenlik açısından genelde parola istemek daha iyidir) |
-| `/usr/bin/rnano /etc/wgetrc` | çalıştırılmasına izin verilen **tam komut yolu ve argüman** — kritik nokta burası |
+| `kisitli_kullanici` | kurala tabi kullanıcı |
+| `ALL=` | kuralın geçerli olduğu **host** — sudoers dosyaları birden çok makinede paylaşılabildiği için host bazlı; tek makinede `ALL` sorun değil |
+| `(root)` | komut **hangi kimlikle** çalışacak |
+| `NOPASSWD:` | bu komut için parola sorulmasın (çıkarılırsa her seferinde kendi parolası — güvenlik açısından genelde parola istemek daha iyi) |
+| `/usr/bin/rnano /etc/wgetrc` | izin verilen **tam komut yolu + argüman** — kritik nokta |
 
-**Neden tam yol + tam argüman, sadece `/usr/bin/rnano` değil?** Sadece `/usr/bin/rnano` yazılsaydı, kullanıcı `sudo rnano <herhangi_bir_dosya>` ile **sistemdeki istediği dosyayı** açabilirdi. Argümanı sabitlemek, kullanıcının başka dosyaları düzenlemesini engeller.
+**Neden tam yol + tam argüman?** Sadece `/usr/bin/rnano` yazılsaydı, kullanıcı `sudo rnano /herhangi/dosya` ile **istediği dosyayı** açardı. Argümanı sabitlemek başka dosyaları engeller. (`rnano` = "restricted nano" — dosya sistemi gezmeyi, başka dosya açmayı zaten kısıtlar; sudoers'ın argüman kilidiyle birlikte iki kat koruma.)
 
-**Adım 3 — komutun gerçek yolunu doğrula:** sudoers path eşleşmesi tam ve kesin olduğu için:
+**Adım 3 — komutun gerçek yolunu doğrula** (sudoers path eşleşmesi tam/kesin):
 ```bash
-which rnano
+which rnano      # /usr/bin/rnano — sudoers'a bunu yaz
 ```
 
-**Adım 4 — test et:**
+**Adım 4 — test:**
 ```bash
 su - kisitli_kullanici
 sudo rnano /etc/wgetrc      # çalışmalı
 sudo rnano /etc/passwd      # reddedilmeli — doğru komut, YANLIŞ dosya
-sudo nano /etc/wgetrc       # reddedilmeli — doğru dosya, YANLIŞ komut (nano ≠ rnano, tam eşleşme gerekir)
-sudo apt install nano       # reddedilmeli — tamamen alakasız komut
-```
-
-**Adım 5 — doğrulama komutu:**
-```bash
-sudo -l -U kisitli_kullanici    # o kullanıcıya tanımlı tüm sudo kurallarını listele
+sudo nano /etc/wgetrc       # reddedilmeli — doğru dosya, YANLIŞ komut (nano ≠ rnano)
+sudo apt install nano       # reddedilmeli — alakasız komut
+sudo -l                     # o kullanıcıya tanımlı sudo kurallarını listele
 ```
 
 **Gerçekleşen test (ödevin canlı çıktısı):**
@@ -401,39 +415,27 @@ ege@debian-egitim:~$ sudo rnano /etc/passwd
 Sorry, user ege is not allowed to execute '/usr/bin/rnano /etc/passwd' as root on debian-egitim.local.
 ```
 
-Beklenen tam olarak gerçekleşmiş: `sudo rnano /etc/wgetrc` sessizce (parola sormadan, `NOPASSWD` sayesinde) çalışmış; hem yanlış komut (`nano`) hem yanlış dosya (`/etc/passwd`) denemeleri reddedilmiş — sudoers'ın **komut + argüman birlikte tam eşleşme** kuralı iki farklı senaryoda da doğru çalıştığını kanıtlıyor.
+Beklenen tam olarak gerçekleşmiş: `sudo rnano /etc/wgetrc` sessizce (`NOPASSWD`) çalışmış; hem yanlış komut (`nano`) hem yanlış dosya (`/etc/passwd`) reddedilmiş — sudoers'ın **komut + argüman birlikte tam eşleşme** kuralı iki senaryoda da doğru çalışmış.
 
-### Kaynaklar
+### Uygulamalı Örnek 2 — `umask` ile varsayılan izin (2. ödevin çözümü)
 
-`/etc/passwd`/`/etc/shadow`/`/etc/group` alan yapısı, `chmod`/`chown`/ACL mekaniği, `sudo`/`su` farkı ve `sudoers` sözdizimi `man 5 passwd`/`man 5 shadow`/`man 5 sudoers`/`man 1 setfacl` ile doğrudan doğrulanabilir genel bilgilerdir — ayrıca kaynak gösterilmedi. Dağıtım-spesifik olan tek iddia MAC sisteminin hangi ailede varsayılan olduğudur:
-
-- **SELinux'ün RHEL/Fedora/Rocky/AlmaLinux'ta, AppArmor'ın Debian (10'dan itibaren)/Ubuntu'da varsayılan olması:**
-  - [AppArmor vs SELinux: Compare the Differences in Linux Security — TuxCare](https://tuxcare.com/blog/selinux-vs-apparmor/)
-
-> [!TIP]
-> **Bu tek kaynak ikincil (blog) niteliğinde — kendi sisteminde `getenforce`/`aa-status` ile doğrulaman, ya da dağıtımının resmi release notlarına bakman daha güvenilir olur.**
-
-### Uygulamalı Örnek 2 — umask ile varsayılan 666 izin (2. ödevin çözümü)
-
-Dosyaların varsayılan izni **umask** değeriyle belirlenir. `chmod`/ACL, **mevcut** bir dosyanın iznini sonradan değiştirmeye yarar; `umask` ise **yeni oluşturulan her dosyanın hangi izinle doğacağını** belirler.
-
-**umask mantığı:** Linux'ta bir dosya oluşturulduğunda sistemin **maksimum varsayılan izni** dosyalar için `666`'dır (dizinler için `777`'dir, çünkü dizin oluşturma varsayılanı farklıdır). `umask` değeri, bu maksimumdan **hangi bitlerin çıkarılacağını** belirler:
+**Mekanizma:** `chmod`/ACL **mevcut** bir dosyanın iznini değiştirir; **`umask`** ise **yeni oluşturulan her dosyanın hangi izinle doğacağını** belirler. `umask` sürecin bir özelliğidir (`umask()` syscall'ı), çocuk süreçlere miras kalır. Bir program dosya oluştururken bir "istenen mod" verir (çoğu program dosya için `666`, dizin için `777`); kernel bu moddan **`umask` bitlerini çıkarır**:
 ```
-Maksimum izin (dosya):  666
-umask:                - 022
-Sonuç:                   644
+İstenen (dosya):  666
+umask:          - 022
+Sonuç:            644
 ```
-`umask`, izin **ekleyen** değil, izin **kısıtlayan** bir değerdir. `666` istemek (hem owner hem group hem other için read+write, execute hariç) aslında **hiçbir kısıtlama yapmamak** demektir: `666 (maksimum) - 000 (umask) = 666`. Yani hedef kullanıcı için `umask` değeri **`000`** olmalı.
+`umask` izin **eklemez, kısıtlar**. Ödev "her dosya `666`" istiyor → hiçbir kısıtlama yok demek → `umask` değeri **`000`** olmalı (`666 - 000 = 666`).
 
 > [!WARNING]
-> **Güvenlik uyarısı: `umask 000`, kullanıcının oluşturduğu **her dosyayı sistemdeki herkesin okuyup yazabileceği** hale getirir — sadece kendisi değil, sunucudaki diğer TÜM kullanıcılar da (group ve other izinleri de 6 olduğu için) dosyayı değiştirebilir. Konfigürasyon dosyaları, script'ler veya hassas veri söz konusuysa ciddi bir risktir. Amaç sadece "aynı grup içindeki kullanıcılar birlikte çalışsın" ise `umask 002` (sonuç: `664` — group de yazabilir, other sadece okur) genelde yeterli ve daha güvenlidir.**
+> **Güvenlik: `umask 000`, kullanıcının oluşturduğu **her dosyayı sistemdeki herkesin okuyup yazabileceği** hale getirir. Config/script/hassas veri için ciddi risk. Amaç "aynı grup birlikte çalışsın" ise `umask 002` (sonuç `664`) genelde yeterli ve daha güvenli.**
 
-**Uygulama — sadece bu kullanıcı için kalıcı hale getirmek:**
+**Uygulama — sadece bu kullanıcı için kalıcı:**
 ```bash
 echo "umask 000" | sudo tee -a /home/egee/.bashrc
 ```
-- **Neden `.bashrc`'ye ekleniyor:** `umask`, oturuma özgü bir shell ayarıdır, kalıcı bir sistem dosyası değildir. Kullanıcı her `bash` oturumu açtığında (SSH ile de, `su - kullanici` ile de) bu dosya otomatik okunur, `umask 000` çalıştırılır.
-- **`-a` neden şart:** `tee` tek başına dosyanın **üzerine yazar**; `-a` (append) `.bashrc`'nin mevcut içeriğini silmeden **sona ekler**.
+- **Neden `.bashrc`:** `umask` oturuma özgü bir shell ayarı; kalıcı sistem dosyası değil. Kullanıcı her `bash` oturumunda (SSH, `su - egee`) `.bashrc` okunur, `umask 000` çalışır.
+- **`-a` neden şart:** `tee` tek başına dosyanın üzerine yazar; `-a` (append) mevcut içeriği silmeden sona ekler.
 
 **Doğrulama:**
 ```bash
@@ -443,7 +445,7 @@ touch test.txt
 ls -l test.txt           # -rw-rw-rw- (666) görülmeli
 ```
 
-**Kapsam notu:** `.bashrc` sadece **interaktif** shell'lerde okunur — bir cron job ya da servis bu dosyayı hiç okumaz. Daha kapsayıcı olmak için `.profile`'a da eklenebilir; cron job'lar için ise crontab'ın (`crontab -u kullanici -e`) en üstüne doğrudan `umask 000` satırı eklenmesi gerekir.
+**Kapsam notu:** `.bashrc` sadece **interaktif** shell'lerde okunur — cron job / servis bunu okumaz. Daha geniş kapsam için `.profile`'a da ekle; cron için crontab'ın (`crontab -u egee -e`) en üstüne `umask 000` satırı; sistem geneli için `/etc/login.defs`'teki `UMASK` ya da bir `pam_umask` yapılandırması.
 
 **Gerçekleşen test (ödevin canlı çıktısı, kısaltılmış):**
 ```
@@ -463,28 +465,70 @@ egee@debian-egitim:~$ ls -l
 ```
 
 > [!TIP]
-> **Dikkat çeken bir nokta: `test2`/`test3.txt` (`.bashrc`'ye ilk `umask 000` eklenmeden ÖNCE, eski oturumda açılmış) `644` çıkıyor — bu beklenen, çünkü o satır henüz `.bashrc`'de yokken oluşturulmuşlar. Ama en sonda, `.bashrc`'de `umask 000` satırı zaten varken açılan **yeni** bir `su - egee` oturumunda oluşturulan `test47.txt` yine `644` çıkıyor — bu, `umask`'ın oturuma özgü olduğunu ve `.bashrc` içeriğinin **o an ne ise** onun uygulandığını gösteren iyi bir kontrol noktası. Kendi ortamınızda benzer bir tutarsızlık görürseniz ilk bakılacak yer `cat ~/.bashrc | grep umask` — dosyada aynı satırın (`sed` ile silinmeye çalışılan ama yanlış yazıldığı için silinemeyen bir `umask 009` gibi) birden fazla, çelişen kopyası olup olmadığını kontrol edin; bash `.bashrc`'yi baştan sona sırayla çalıştırır, dosyadaki **en son** `umask` satırı geçerli olur.**
+> **Dikkat çeken nokta: `test2`/`test3.txt` (`.bashrc`'ye `umask 000` eklenmeden ÖNCE, eski oturumda açılmış) `644` çıkıyor — beklenen. Ama en sonda, `.bashrc`'de `umask 000` **zaten varken** açılan **yeni** bir `su - egee` oturumunda oluşturulan `test47.txt` **yine `644`** çıkıyor. İlk bakılacak yer: `grep -n umask ~/.bashrc` — dosyada aynı satırın birden fazla, **çelişen** kopyası (örn. `sed` ile silinmeye çalışılıp yanlış yazıldığı için silinemeyen bir `umask 022` / `umask 009`) olup olmadığını kontrol et. Bash `.bashrc`'yi baştan sona sırayla çalıştırır, **en son** `umask` satırı geçerli olur. (Bu, `## Sorular` altında takip maddesi olarak bırakıldı.)**
+
+### Kaynaklar
+
+**Bu başlık her zaman Genişletilmiş Anlatım'ın SON `###` bölümüdür** — hemen ardından `## Notlar` gelir; altında uygulamalı örnek ya da başka konu anlatımı gelmez.
+
+- **`/etc/passwd`, `/etc/shadow`, `/etc/group` alan yapısı:**
+  - [passwd(5) — man7.org](https://man7.org/linux/man-pages/man5/passwd.5.html), [shadow(5) — man7.org](https://man7.org/linux/man-pages/man5/shadow.5.html), [group(5) — man7.org](https://man7.org/linux/man-pages/man5/group.5.html) — alan tanımları.
+- **Shadow password suite'in var olma nedeni (world-readable passwd + brute-force riski → hash'i root-only dosyaya taşı):**
+  - [What is a shadow password file? — TechTarget](https://www.techtarget.com/cybersecurity/definition/shadow-password-file) (ikincil — tarihsel özet); [Shadow password — Wikipedia](https://en.wikipedia.org/wiki/Passwd#Shadow_file) (tersiyer, `passwd`'nin world-readable kalma zorunluluğu ve `/etc/shadow`'un 640/root:shadow olması).
+- **`chmod`/`chown`, setuid/setgid/sticky, izin kontrol sırası:**
+  - [chmod(1) — GNU coreutils manual](https://www.gnu.org/software/coreutils/manual/html_node/chmod-invocation.html) ve [inode(7) — man7.org](https://man7.org/linux/man-pages/man7/inode.7.html) — mod bitleri, `S_ISUID`/`S_ISGID`/`S_ISVTX`.
+- **POSIX ACL (1003.1e taslak 17), `mask` girdisi:**
+  - [acl(5) — man7.org](https://man7.org/linux/man-pages/man5/acl.5.html) — ACL girdi türleri, `mask`'ın "grup sınıfı için etkin üst sınır" tanımı.
+  - [POSIX Access Control Lists on Linux — Andreas Grünbacher (USENIX)](https://www.usenix.org/legacyurl/posix-access-control-lists-linux) — Linux ACL'nin POSIX.1e taslak 17'ye uyumu, extended attribute'larda saklanması.
+- **DAC vs MAC, LSM çerçevesi; SELinux'ün RHEL/Rocky'de enforcing varsayılan, AppArmor'ın Debian 10 (buster)'dan itibaren varsayılan olması:**
+  - [Using SELinux — Red Hat Enterprise Linux 10 Documentation](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/using_selinux/index) — SELinux'ün varsayılan enforcing modu, context/tip modeli.
+  - [SELinux Security — Rocky Linux Documentation](https://docs.rockylinux.org/10/guides/security/learning_selinux/) — Rocky'de SELinux'ün varsayılan etkin olması.
+  - [AppArmor — Debian Wiki](https://wiki.debian.org/AppArmor) ve [Let's enable AppArmor by default — debian-devel arşivi](https://groups.google.com/g/linux.debian.devel/c/k4bWbaQ8Yqs) — AppArmor'ın Debian 10 buster'dan itibaren varsayılan etkin olması.
+  - [Linux Security Modules — kernel.org](https://www.kernel.org/doc/html/latest/admin-guide/LSM/index.html) — DAC kontrolünden sonra çağrılan LSM kancaları.
+- **`useradd`/`adduser` iki katman, `-r` sistem hesabı, `/etc/login.defs` UID eşiği:**
+  - [useradd(8) — man7.org](https://man7.org/linux/man-pages/man8/useradd.8.html), [adduser(8) — Debian Manpages](https://manpages.debian.org/stable/adduser/adduser.8.en.html), [login.defs(5) — man7.org](https://man7.org/linux/man-pages/man5/login.defs.5.html).
+- **`sudo` tarihi (Coggeshall & Spencer, ~1980, SUNY/Buffalo) ve least-privilege felsefesi; `su` ile farkı:**
+  - [A Brief History of Sudo — sudo.ws](https://www.sudo.ws/about/history/) — kökeni ve tasarım amacı.
+  - [sudoers(5) — sudo.ws](https://www.sudo.ws/docs/man/sudoers.man/) — kural sözdizimi, host/runas/komut+argüman eşleşmesi.
+  - [su(1) — man7.org](https://man7.org/linux/man-pages/man1/su.1.html) — `su -` / `--login` tam login shell davranışı.
+- **Editör tarihi (vi = Bill Joy 1976, ex'in görsel modu, POSIX standardı; vim 1991 Moolenaar; nano 1999, pico klonu):**
+  - [Vi (text editor) — Wikipedia](https://en.wikipedia.org/wiki/Vi_(text_editor)) — `ex`'ten `vi`'ye, modal tasarımın donanım gerekçesi, POSIX/SUS standardı.
+  - [GNU nano — official site](https://www.nano-editor.org/) — pico'nun özgür klonu, kipsiz tasarım.
+- **`less`'in `more`'dan doğması (Mark Nudelman 1983–85, geri kaydırma; tüm dosyayı okumadan açma):**
+  - [Less (Unix) — Wikipedia](https://en.wikipedia.org/wiki/Less_(Unix)) — "backwards more", dosyanın tamamını okumadan görüntüleme.
+  - [less(1) — man7.org](https://man7.org/linux/man-pages/man1/less.1.html) — `F` canlı takip, `&` süzme, arama.
+- **`locate`/`updatedb` indeks mantığı; `plocate`'in modern Debian/Fedora varsayılanı olması:**
+  - [updatedb(8) / plocate — Debian Manpages](https://manpages.debian.org/testing/plocate/updatedb.8.en.html)
+  - [Changes/Plocate as the default locate implementation — Fedora Project Wiki](https://fedoraproject.org/wiki/Changes/Plocate_as_the_default_locate_implementation)
+- **`curl` vs `wget` tasarım felsefesi (curl = libcurl + stdout/"her şey boru"; wget = dosya indirici + recursive):**
+  - [curl vs Wget — Daniel Stenberg (curl yazarı)](https://daniel.haxx.se/docs/curl-vs-wget.html) — birincil: recursive HTML ayrıştırma yalnız wget'te; curl veriyi ayrıştırmaz; curl `cat` gibi, wget `cp` gibi.
+  - [GNU Wget Manual](https://www.gnu.org/software/wget/manual/wget.html) — `-c`, `-r`, `-np`, `-k`.
+- **`umask` mekaniği:**
+  - [umask(2) — man7.org](https://man7.org/linux/man-pages/man2/umask.2.html) ve [bash builtin `umask` — GNU Bash manual](https://www.gnu.org/software/bash/manual/bash.html) — istenen moddan umask bitlerinin çıkarılması, süreç özelliği ve miras.
+
+Tekil bayrak/sözdizimi anlamları (`chmod 750`, `useradd -m`, `curl -O`, `less` içi tuşlar) ilgili `man` sayfalarıyla doğrulanabilir; bunlar için ayrıca kaynak gösterilmedi.
 
 ## Notlar
 
-- Bugünün ana teması: DAC (chmod/chown/ACL — sahip karar verir) ile MAC (SELinux/AppArmor — merkezi politika, sahip bile aşamaz) arasındaki kavramsal ayrım, ve `sudo`'nun `su`'dan farkının aslında "tam oturum devri" ile "tek komutluk, denetlenebilir yetki delegasyonu" arasındaki fark olduğu.
-- `sudoers` kuralları yazarken en kritik nokta: sadece binary yolunu değil, **argümanı da** sabitlemek — aksi halde "sadece bu dosyayı düzenlesin" niyeti, "her şeyi düzenleyebilsin" sonucuna dönüşür.
-- `umask`, mevcut dosyaların değil, **gelecekte oluşacak** dosyaların varsayılan iznini belirler — `chmod` ile karıştırılmamalı; oturuma özgüdür, `.bashrc`/`.profile`/crontab gibi doğru başlangıç dosyasına yazılmazsa kalıcı olmaz.
-- `/etc/shadow`'un var olma nedeni tek cümleyle özetlenebilir: "herkesin okuyabildiği bir dosyada parola hash'i tutmak güvenli değildir" — bu prensip, ACL/SELinux gibi daha ileri erişim kontrol katmanlarının da temel motivasyonuyla aynıdır: erişimi mümkün olan en dar çevreye indirmek.
+- Bugünün ana teması: **DAC** (chmod/chown/ACL — sahip karar verir, root aşar) ile **MAC** (SELinux/AppArmor — merkezi politika, root bile aşamaz) arasındaki kavramsal ayrım; ve `sudo`'nun `su`'dan farkının aslında "tam oturum devri" ile "tek komutluk, denetlenebilir, least-privilege yetki delegasyonu" arasındaki fark olduğu.
+- `sudoers` yazarken en kritik nokta: sadece binary yolunu değil **argümanı da** sabitlemek — aksi halde "sadece bu dosyayı düzenlesin" niyeti "her şeyi düzenleyebilsin" sonucuna döner.
+- `umask` mevcut dosyaların değil **gelecekte oluşacak** dosyaların varsayılan iznini belirler; oturuma özgüdür — `.bashrc`/`.profile`/crontab/`login.defs`'ten doğru olana yazılmazsa kalıcı olmaz. Aynı `.bashrc`'de çelişen iki `umask` satırı varsa **sonuncusu** kazanır.
+- `/etc/shadow`'un var olma nedeni tek cümleyle: "herkesin okuyabildiği bir dosyada parola hash'i tutmak güvenli değil" — bu prensip (erişimi en dar çevreye indir) ACL, SELinux, sudoers'ın da temel motivasyonu. Aynı "referansı olan kaynak serbest bırakılmaz" fikri Gün 4'teki silinmiş-ama-açık dosya ve Gün 6'daki zombi/reap ile paralel.
 
 ## Komutlar / Örnekler
 
 ```bash
 # kullanıcı/grup veritabanı dosyaları
-cat /etc/passwd | grep kullanici
-sudo cat /etc/shadow
-cat /etc/group
+grep '^ucp:' /etc/passwd
+sudo grep '^ucp:' /etc/shadow
+getent group sudo            # /etc/group + nsswitch kaynaklarını birlikte sorgula
+sudo vipw ; sudo vigr        # bu dosyaları güvenli düzenle
 
 # izinler
 chmod 750 dosya
-chmod -R 755 dizin/
-chown ucp:sudo dosya
-chgrp sudo dosya
+chmod -R g=rX dizin/
+chown -R ucp:ucp /home/ucp
+find / -perm -4000 2>/dev/null    # tüm setuid binary'leri denetle
 
 # ACL
 getfacl dosya
@@ -493,39 +537,38 @@ setfacl -x u:ege dosya
 setfacl -d -m u:ege:rwx dizin/
 
 # SELinux / AppArmor
-getenforce
-setenforce 0
-aa-status
+getenforce ; ls -Z dosya ; sudo ausearch -m avc -ts recent
+sudo aa-status ; sudo aa-complain /usr/sbin/something
 
 # kullanıcı yönetimi
 sudo useradd -m -s /bin/bash kullanici
+sudo usermod -aG sudo kullanici       # -a ŞART
 sudo userdel -r kullanici
-id
-groups
+id ; groups ; whoami
 
 # sudo / sudoers
 sudo visudo -f /etc/sudoers.d/kullanici
 sudo -l -U kullanici
+sudo !!
 
 # editörler / pager
-nano dosya
-vi dosya
-less /var/log/syslog
+vi dosya      # :wq / :q!
+nano dosya    # ^O ^X
+less +F /var/log/syslog
 
 # history
-history
-!245
-!245:p
-!!
+history ; !245 ; !245:p ; !! ; ^eski^yeni
+# Ctrl+R : geriye doğru canlı arama
 
 # locate / curl / wget / diff
-locate dosya_adi
-curl -O https://site.com/dosya
-wget -c https://site.com/buyuk_dosya.iso
-diff -u dosya1 dosya2
-diff -Nur dizin1/ dizin2/
+locate -e dosya_adi ; sudo updatedb
+curl -fsSL https://site.com/api | jq .
+wget -c https://site.com/buyuk.iso
+diff -u a b ; diff -Nur dizin1/ dizin2/ ; diff <(komut1) <(komut2)
 ```
 
 ## Sorular / Takip Edilecekler
 
-- [ ] `test47.txt`'nin neden `644` çıktığını (yukarıdaki tip kutusundaki gözlem) `~/.bashrc` içeriğini `grep umask` ile inceleyerek doğrula.
+- [ ] `test47.txt`'nin neden `644` çıktığını `grep -n umask ~/.bashrc` ile doğrula — dosyada birden fazla, çelişen `umask` satırı var mı, en sondaki hangisi?
+- [ ] Kendi VM'inde bir setuid binary (`/usr/bin/passwd`) çalıştırırken başka terminalden `grep -E 'Uid|Gid' /proc/$(pgrep passwd)/status` ile real vs effective UID'nin farklılaştığını gözlemle.
+- [ ] `getfacl` ile bir ACL kur, sonra `chmod g=r` uygula ve tekrar `getfacl` — `chmod`'un ACL'li dosyada `mask` girdisini değiştirdiğini doğrula.

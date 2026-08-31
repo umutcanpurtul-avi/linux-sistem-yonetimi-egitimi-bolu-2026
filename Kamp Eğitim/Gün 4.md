@@ -12,29 +12,29 @@ konular:
 
 # Gün 4 Raporu
 
-Bağlantı: [Linux Sistem Yönetimi Eğitimi](../README.md) · [00 - Eğitim Planı](../00%20-%20Eğitim%20Planı.md) · [Gün 3](Gün%203.md)
+Bağlantı: [Linux Sistem Yönetimi Eğitimi](../README.md) · [00 - Eğitim Planı](../00%20-%20Eğitim%20Planı.md) · [Gün 3](Gün%203.md) · [Gün 5](Gün%205.md)
 
 ## İşlenen Konular
 
-- FHS Derinlemesine bölümlerin amaçları ve içerikleri dikkat edilmesi gereken alanları.
-- Paket yöneticisi nedir ne işe yarar Derinlemesine incelemeliyiz.
+- FHS derinlemesine: bölümlerin amaçları, içerikleri ve dikkat edilmesi gereken alanları.
+- Paket yöneticisi nedir, ne işe yarar — derinlemesine incelenmeli.
 
-Örnek bir soru: bir mp3 dosyasını açtım terminal üzerinde çalıyor, mp3 çalarken mp3 dosyasını sildim. Devam eden bir süreç olduğu için inode'ye bağlı bir process var, aslında dosya hâlâ disk içinde — bunu kurtarmanın bir yolu var mı?
+Örnek bir soru: bir mp3 dosyasını terminal üzerinde açtım, çalıyor. Çalarken mp3 dosyasını sildim. Devam eden bir süreç olduğu için inode'a bağlı bir process var; dosya hâlâ disk içinde — bunu kurtarmanın bir yolu var mı?
 
-Dosya sıkıştırma metodları:
-Gzip, Xz, Tar bunların kullanımı ve parametre kullanımı konuları işlendi.
+Dosya sıkıştırma metodları: `gzip`, `xz`, `tar` — bunların kullanımı ve parametreleri işlendi.
 
 ASCII ve HEX arasındaki farklar nelerdir?
 
-----
+---
+
 Paket yönetim sistemleri nelerdir?
 Paket yönetim sistemlerinin farkları nelerdir?
-Paket yönetim sistemlerinin Yükleme, Silme ve Güncelleme metodları nelerdir.
-Paket yönetim sistemlerinde Repoların önemi ve mantığı, dağıtım repoları arasındaki farklar nelerdir.
+Paket yönetim sistemlerinin yükleme, silme ve güncelleme metodları nelerdir?
+Paket yönetim sistemlerinde repoların önemi ve mantığı, dağıtım repoları arasındaki farklar nelerdir?
 
-Linux Server Dağıtımlarında Paket yönetim yazılımları nelerdir.
+Linux server dağıtımlarında paket yönetim yazılımları nelerdir?
 
-apt komutu ve parametreleri
+`apt` komutu ve parametreleri.
 
 ## Genişletilmiş Anlatım (Öğrenme İçin Ek Açıklamalar)
 
@@ -43,18 +43,24 @@ apt komutu ve parametreleri
 
 ### FHS'nin derinlemesine tekrarı — Gün 3'ün üzerine
 
-Bugün tekrar edilen FHS konusunu (`/bin`, `/etc`, `/var`, `/tmp`, `/home`...) ve her dizinin **neden** o şekilde ayrıldığını (tarihsel `/usr` ayrımı, `/var`'ın ayrı bölüm olmasının kök dosya sistemini log taşmasından koruması, `/tmp`'nin `tmpfs` olma nedeni gibi) [Gün 3](Gün%203.md) içindeki "Dizin yapısı (FHS)" bölümünde satır satır işledik — burada tekrar yazıp kendini tekrar etmek yerine oraya yönlendiriyorum. Bugünün asıl yeni konusu, dosyanın "silinmesi" ile "kernel'in onu gerçekten serbest bırakması" arasındaki farkın **canlı bir senaryoda** ne anlama geldiği — tam olarak bunu aşağıda çözüyoruz.
+Bugün tekrar edilen FHS konusunu (`/bin`, `/etc`, `/var`, `/tmp`, `/home`, `/opt`...) ve her dizinin **neden** o şekilde ayrıldığını (tarihsel `/usr` ayrımı ve `usr-merge`, `/var`'ın ayrı bölüm olmasının kökü log taşmasından koruması, `/tmp`'nin `tmpfs` olması, `/etc`'nin program kodundan ayrı tutulması) [Gün 3#Dizin yapısı (FHS) — hangi dizin ne işe yarar, ve **neden** böyle ayrılmış](Gün%203.md#dizin-yapısı-fhs-hangi-dizin-ne-işe-yarar-ve-neden-böyle-ayrılmış) bölümünde satır satır işledik — burada tekrar yazmak yerine oraya yönlendiriyorum.
+
+**Bugünkü tekrarın vurguladığı ek nokta:** FHS bir **kural (standart)** olduğu için, dağıtımlar arası taşınabilirlik sağlar ama **zorunlu kılınmaz** — `/opt`, `/srv` gibi dizinlerin içeriği dağıtıma göre değişebilir, `/usr/local` senin (paket yöneticisi dışında) elle kurduğun şeyler içindir ve paket güncellemeleri buraya asla dokunmaz. "Dosyayı nereye koyayım / nerede ararım" sorusunun cevabı çoğu zaman FHS'de yazılıdır (`man hier` de aynı bilgiyi sistemin kendi manual'ından verir).
+
+Bugünün asıl yeni konusu, dosyanın "silinmesi" ile "kernel'in onu gerçekten serbest bırakması" arasındaki farkın **canlı bir senaryoda** ne anlama geldiği.
 
 ### mp3 çalarken silinen dosya — "hayalet dosya" senaryosu ve kurtarma yöntemi
 
-Bu, Gün 3'te gördüğün bir gerçeği **doğrudan pratiğe döken** klasik bir Unix sorusudur: *"Bir inode, `st_nlink` sıfıra düşse bile, onu açık tutan en az bir süreç (process) varsa disk üzerinde yaşamaya devam eder."* mp3 örneğinde tam olarak olan şey şudur:
+**Mekanizma:** Bu, Gün 3'te gördüğün bir gerçeğin doğrudan pratiğe dökülmüş hâlidir: *"Bir inode, `st_nlink` sıfıra düşse bile, onu açık tutan en az bir süreç varsa disk üzerinde yaşamaya devam eder."*
 
-1. `mpg123 sarki.mp3` gibi bir komutla dosyayı çaldığında, oynatıcı program `open("sarki.mp3")` çağrısı yapar — kernel bu çağrıya karşılık ona bir **dosya tanıtıcısı (file descriptor, fd)** verir; bu fd, doğrudan dosyanın **inode'una** bağlıdır, dosyanın **adına** değil.
-2. Sen `rm sarki.mp3` çalıştırdığında, kernel sadece dizin girdisini (`"sarki.mp3" → inode_no` satırını) siler ve inode'un `st_nlink` sayacını bir azaltır. **Ama** oynatıcı sürecin hâlâ o inode'a açık bir fd'si olduğu için, kernel'in "veriyi gerçekten sil" kuralı (`st_nlink == 0` **VE** açık fd sayısı == 0) henüz sağlanmamıştır — veri diskte **tamamen sağlam** durur, sadece artık **hiçbir dizinden erişilemez** hâle gelmiştir (bir "hayalet" dosya).
-3. Müzik çalmaya devam eder çünkü oynatıcı zaten dosyayı **isimle değil, fd ile** okumaya devam ediyordur — silme işlemi ismi kaldırır, fd'yi değil.
+- **Ne oluyor:** `mpg123 sarki.mp3` gibi bir komut dosyayı `open()` ile açar; kernel ona bir **dosya tanıtıcısı (file descriptor, fd)** verir. Bu fd doğrudan dosyanın **inode'una** bağlıdır, **adına** değil.
+- **Sen `rm sarki.mp3` yapınca:** kernel sadece dizin girdisini (`"sarki.mp3" → inode_no`) siler, `st_nlink`'i bir azaltır. Ama oynatıcının hâlâ açık fd'si olduğundan "veriyi gerçekten sil" kuralı (`st_nlink == 0` **VE** açık fd == 0) sağlanmamıştır — veri diskte **tamamen sağlam**, sadece **hiçbir dizinden erişilemez** ("hayalet" dosya).
+- **Müzik neden devam ediyor:** oynatıcı dosyayı zaten isimle değil **fd ile** okuyor; silme ismi kaldırır, fd'yi değil.
 
-**Kurtarma yöntemi — `/proc/<pid>/fd/` mekanizması:**
-Kernel, her sürecin o an açık tuttuğu tüm dosya tanıtıcılarını `/proc/<pid>/fd/` altında sembolik link gibi görünen girdilerle dışa vurur. Silinen ama hâlâ açık olan bir dosyanın linki, hedefi artık yokken bile `dosya_adi.mp3 (deleted)` etiketiyle görünmeye devam eder — ve bu link, isme değil doğrudan **inode'a** işaret ettiği için hâlâ **okunabilir**:
+**5N1K:**
+- **Ne zaman kurtarma mümkün:** sadece o dosyayı açık tutan süreç **hâlâ çalışırken**. Süreç kapanırsa fd kapanır, açık fd 0'a düşer, kernel veriyi serbest bırakır — kurtarma penceresi kapanır.
+- **Neden `/proc/<pid>/fd/` işe yarıyor:** `man 5 proc`'a göre `/proc/<pid>/fd/` her sürecin açık tuttuğu fd'leri **symlink gibi görünen girdilerle** dışa vurur. Silinmiş ama açık dosyanın linki `... (deleted)` etiketiyle görünmeye devam eder ve isme değil doğrudan **inode'a** işaret ettiğinden hâlâ **okunabilir**.
+- **Kim:** dosyaya erişim izni olan kullanıcı (genelde sürecin sahibi ya da root).
 
 ```bash
 # 1. Dosyayı çalan sürecin PID'ini bul
@@ -64,132 +70,180 @@ pgrep mpg123                      # ya da: lsof | grep "sarki.mp3 (deleted)"
 ls -l /proc/<PID>/fd/
 # lr-x------ 1 ucp ucp 64 ... 3 -> /home/ucp/sarki.mp3 (deleted)
 
-# 3. O fd'yi normal bir dosyaymış gibi kopyala — veri hâlâ orada
+# 3. O fd'yi normal dosyaymış gibi kopyala — veri hâlâ orada
 cp /proc/<PID>/fd/3 kurtarilan.mp3
 ```
 
 > [!TIP]
-> **Bu numara sadece mp3 için değil, **her türlü açık dosyada** işe yarar — yanlışlıkla sildiğin bir log dosyasını, üzerine yazan servis kapanmadan önce aynı yöntemle kurtarabilirsin. Pratikte "disk dolu görünüyor ama `du` boş gösteriyor" bulmacasının çözümü de aynı mekanizmaya dayanır (Gün 3'te değindiğimiz `lsof | grep deleted`).**
+> **Bu numara sadece mp3 için değil, **her türlü açık dosyada** işe yarar — yanlışlıkla sildiğin bir log dosyasını, üzerine yazan servis kapanmadan aynı yöntemle kurtarabilirsin. "Disk dolu görünüyor ama `du` boş gösteriyor" bulmacasının çözümü de aynı mekanizmaya dayanır (`lsof | grep deleted`); bu, Gün 6'daki zombi/reap konusuyla aynı "kaynak, ona referans veren varken serbest bırakılmaz" fikrinin bir başka yüzü.**
 
 ### Sıkıştırma ve arşivleme — `tar`, `gzip`, `xz` gerçekte ne yapar
 
-Burada sık yapılan bir kavram karışıklığını netleştirmek gerekiyor: **`tar` bir sıkıştırma aracı DEĞİLDİR.**
+**Kavram karışıklığını netleştir: `tar` bir sıkıştırma aracı DEĞİLDİR.**
 
 **`tar` (tape archive) — arşivleme:**
-`tar`'ın tek işi, **birden çok dosyayı** (izinleri, sahiplik bilgisi, dizin yapısı korunarak) **tek bir dosyaya** art arda ekleyip birleştirmektir — sıkıştırma yapmaz, sadece "paketler". `.tar` uzantılı bir dosya, orijinal dosyaların toplamıyla neredeyse aynı boyuttadır (üstüne sadece küçük bir başlık/metadata eklenir). Adının "tape archive" olması tesadüf değil — 1970'lerde manyetik teybe **sıralı** olarak yazılan, tek bir uzun akış (stream) olarak tasarlanmıştır; bu yüzden `tar` içindeki tek bir dosyaya rastgele erişemezsin, arşivi baştan okumak zorundasın (`.zip` gibi formatlardan farkı budur — zip her dosyanın nerede başladığını gösteren bir "içindekiler" tablosu tutar, tar tutmaz).
+`tar`'ın tek işi, birden çok dosyayı (izinler, sahiplik, dizin yapısı korunarak) art arda **tek bir akışa** eklemektir — sıkıştırmaz, "paketler". Adı tesadüf değil: 1970'lerde **kendi dosya sistemi olmayan sıralı I/O aygıtlarına** (manyetik teyp) yazmak için tasarlandı. Format: her dosyanın önüne 512 baytlık bir başlık bloğu; dosya verisi olduğu gibi, sonuna 512'nin katına tamamlayacak sıfır dolgu; arşivin sonu en az iki sıfır blokla işaretlenir. POSIX bunu **ustar** (ve genişletmesi **pax**) olarak standartlaştırdı.
 
-**`gzip`/`xz` — asıl sıkıştırma:**
-Bunlar dosya/dizin **kavramını hiç bilmez** — sadece "gelen bayt akışını" alıp daha küçük bir bayt akışına dönüştürürler (ve tersini yapabilirler). Bu yüzden **tek bir dosyayı** sıkıştırırlar; birden fazla dosyayı sıkıştırmak istiyorsan önce `tar` ile TEK bir akışa dönüştürüp SONRA o akışı sıkıştırman gerekir — `tar.gz`/`tar.xz` kombinasyonunun var olma nedeni tam olarak budur (önce paketle, sonra sıkıştır).
+- **Neden `.tar` içindeki tek dosyaya rastgele erişemezsin:** teyp tasarımının sonucu — merkezi "içindekiler" tablosu (central directory) **yoktur**; arşivi baştan sıralı okumak zorundasın. `.zip`'in farkı budur (zip her dosyanın nerede başladığını gösteren bir dizin tutar).
+- **5N1K:** *Ne* = çoklu dosyayı tek akışa birleştiren arşivleyici. *Nasıl* = başlık + veri + dolgu blokları zinciri. *Ne zaman* = yedekleme, taşıma, dağıtım öncesi. *Neden* = teyp/sıralı ortamda dosya sistemi olmadan çoklu dosya saklamak; izin/sahiplik/symlink korumak (düz `cp` her zaman korumaz). *Kim* = kullanıcı; `tar` sistemin ayrıcalığına dokunmaz.
 
-- **`gzip` (DEFLATE algoritması):** İki adımlı çalışır — (1) **LZ77:** akış içinde daha önce geçmiş bir bayt dizisini bulursa, onu tekrar yazmak yerine "şu kadar geriye git, şu kadar bayt kopyala" şeklinde küçük bir referansla değiştirir (küçük, 32KB'lık bir "pencere" içinde arar), (2) **Huffman kodlama:** akışta **sık geçen** baytlara **kısa** bit kodları, **nadir geçen** baytlara **uzun** bit kodları atar (bir metinde 'e' harfi 'q'dan çok daha sık geçtiği için 'e'yi daha az bitle temsil etmek yer kazandırır). Küçük pencere sayesinde **hızlıdır** ama uzak tekrarları yakalayamaz.
-- **`xz` (LZMA algoritması):** Aynı LZ77 fikrinin çok daha büyük bir pencereyle (megabaytlarca) ve çok daha güçlü, olasılıksal bir kodlama (range coding) ile geliştirilmiş hâlidir. Uzak tekrarları da yakalayabildiği ve daha akıllı kodladığı için **çok daha iyi sıkıştırma oranı** verir ama bunun bedeli **daha fazla CPU/zaman**dır.
+**`gzip` / `xz` — asıl sıkıştırma:**
+Bunlar **dosya/dizin kavramını bilmez** — sadece "gelen bayt akışını" alıp daha küçük bir akışa çevirir (ve tersi). Bu yüzden **tek bir akışı** sıkıştırırlar; çoklu dosya için önce `tar` ile tek akışa çevirip **sonra** sıkıştırırsın — `tar.gz` / `tar.xz` kombinasyonunun sebebi budur (önce paketle, sonra sıkıştır).
+
+- **`gzip` (DEFLATE — RFC 1951):** iki adım. (1) **LZ77:** akışta daha önce geçmiş bir bayt dizisini bulunca onu "şu kadar geriye git, şu kadar bayt kopyala" referansıyla değiştirir; arama penceresi **sabit 32 KB** (32.768 bayt), maksimum geri referans 258 bayt. (2) **Huffman kodlama:** sık geçen baytlara kısa bit kodları, nadir baytlara uzun kodlar. Küçük pencere → **hızlı**, ama pencereden uzaktaki tekrarları yakalayamaz. DEFLATE aslında Phil Katz'ın PKZIP'i için tanımlandı, sonra RFC 1951 oldu.
+- **`xz` (LZMA):** aynı LZ77 fikri ama **çok daha büyük sözlük** (tipik 64 KiB–64 MiB, teoride ~1.5 GiB'e kadar) ve daha güçlü olasılıksal kodlama (range coding). Uzak tekrarları da yakaladığı için **çok daha iyi sıkıştırma oranı**, bedeli **daha fazla CPU/zaman ve bellek**.
 
 ```bash
 tar -cf arsiv.tar dizin/          # sadece paketle (c=create, f=dosya adı)
-tar -czf arsiv.tar.gz dizin/      # paketle + gzip ile sıkıştır (z=gzip)
-tar -cJf arsiv.tar.xz dizin/      # paketle + xz ile sıkıştır (J=xz)   -> daha küçük, daha yavaş
-tar -xf arsiv.tar.gz              # aç (x=extract) — z/J vermesen de tar dosya imzasından hangi sıkıştırma olduğunu KENDİSİ anlar
-tar -tf arsiv.tar.gz              # AÇMADAN sadece içindekileri listele (t=list)
-tar -xvf arsiv.tar.gz             # v=verbose, hangi dosyanın açıldığını göstere göstere aç
+tar -czf arsiv.tar.gz dizin/      # paketle + gzip (z)
+tar -cJf arsiv.tar.xz dizin/      # paketle + xz (J)  -> daha küçük, daha yavaş
+tar -xf arsiv.tar.gz              # aç (x) — z/J vermesen de tar dosya imzasından anlar
+tar -tf arsiv.tar.gz              # AÇMADAN içindekileri listele (t)
+tar -xvf arsiv.tar.gz             # v=verbose, göstere göstere aç
+tar -czf yedek.tar.gz --exclude='*.log' dizin/   # bazı dosyaları dışarıda bırak
 ```
 
 > [!TIP]
-> **Ne zaman hangisi: hız önemliyse (örn. günlük yedekleme, sık çalışan bir iş) `gzip`; disk/ağ alanı önemliyse (örn. dağıtım paketleri, arşive bir kez yazıp uzun süre saklama) `xz` tercih edilir. `bzip2` (`j` bayrağı) da vardır, ikisinin arasında bir yerde durur ama günümüzde `xz` genelde onu geride bırakmıştır.**
+> **Ne zaman hangisi: hız önemliyse (günlük yedek, sık çalışan iş) `gzip`; disk/ağ alanı önemliyse (dağıtım paketleri, uzun süre saklama) `xz`. `zstd` (`--zstd` / `.tar.zst`) son yıllarda "gzip hızında ama daha iyi oran" diye ikisinin arasına oturdu — Arch ve Fedora paketleri artık `zstd` kullanır.**
 
 ### ASCII ve HEX — bunlar karşılaştırılabilir iki şey bile değil
 
-Bu ikisi genelde "birbirine alternatif iki format" gibi algılanır ama aslında **tamamen farklı kategorilerdendir** — biri bir **kod tablosu**, diğeri bir **sayı yazma biçimi**:
+**Farklı kategorilerden:** biri bir **kod tablosu**, diğeri bir **sayı yazma biçimi**.
 
-- **ASCII:** Bir **karakter kodlama** standardıdır — her karaktere (harf, rakam, sembol) **0-127 arası bir sayı** atar. Örneğin `'A'` harfinin ASCII kodu **65**'tir (ondalık/decimal olarak). Bilgisayar aslında hiçbir zaman "A harfini" saklamaz, sadece **65 sayısını** saklar; ekrana bastırılırken bu sayı ASCII tablosuna göre 'A' şeklinde çizilir.
-- **HEX (onaltılık taban):** Bu bir kodlama değil, sadece bir **sayıyı yazma biçimidir** — tıpkı 10'luk (decimal) ya da 2'lik (binary) taban gibi, sadece 16 rakam kullanır (`0-9` ve `A-F`). **Her türlü sayı** (ASCII kodu olsun olmasın) hex ile yazılabilir.
+- **ASCII:** bir **karakter kodlama** standardı — her karaktere (harf, rakam, sembol) **0–127 arası bir sayı** atar (`man ascii` tam tabloyu verir). `'A'`'nın ASCII kodu **65**'tir. Bilgisayar "A harfini" saklamaz, **65 sayısını** saklar; ekrana bastırılırken bu sayı fontla 'A' şeklinde çizilir. UTF-8, ilk 128 kod noktasında ASCII ile **birebir uyumludur** — bu yüzden saf ASCII bir dosya aynı zamanda geçerli UTF-8'dir.
+- **HEX (onaltılık taban):** kodlama değil, bir **sayıyı yazma biçimi** — 10'luk ya da 2'lik taban gibi, sadece 16 rakam (`0-9`, `A-F`). Her türlü sayı hex ile yazılabilir.
 
-**Bağlantı nerede kuruluyor?** Bir metin dosyasını "hex dump" ile (`xxd`/`hexdump`) incelediğinde, aslında **her karakterin ASCII (ya da UTF-8) kodunu, hex tabanında yazılmış hâliyle** görürsün — üç farklı gösterim, aynı sayı:
+**Bağlantı:** bir dosyayı "hex dump" ile (`xxd`/`hexdump`) incelediğinde, **her baytın değerini hex tabanında** görürsün. Metin dosyasında bu baytlar karakter kodlarıdır:
 
 ```
-'A' harfi  →  ondalık (decimal): 65   →  hex: 0x41   →  ikili (binary): 01000001
+'A' harfi  →  ondalık: 65   →  hex: 0x41   →  ikili: 01000001
 ```
 
 ```bash
 echo -n "A" | xxd
 # 00000000: 41                                       A
-#           ^^ bu "41", 65 sayısının hex yazımı — 'A'nın ASCII kodu
+#           ^^ 65 sayısının hex yazımı — 'A'nın ASCII kodu
 
-printf '%d\n' 0x41     # hex'ten decimal'e çevir -> 65
-printf '%x\n' 65       # decimal'den hex'e çevir -> 41
+printf '%d\n' 0x41     # hex → decimal: 65
+printf '%x\n' 65       # decimal → hex: 41
 ```
 
-Hex'in popüler olmasının pratik nedeni: her hex hanesi **tam olarak 4 bit**e karşılık gelir, yani **2 hex hanesi = tam 1 bayt** — bu da onu binary veriyi (ham baytları) insan gözüyle okunabilir şekilde göstermenin en kompakt, en "temiz" yolu yapar (decimal'de baytlar böyle düzgün hizalanmaz).
+**Neden hex bu iş için standart:** her hex hanesi **tam 4 bit**, yani **2 hane = tam 1 bayt** — ham baytları insan gözüyle okunur, hizalı göstermenin en kompakt yolu (decimal'de baytlar düzgün hizalanmaz). `xxd`/`hexdump`, bir dosyanın metin mi binary mi olduğunu anlamak, "sihirli sayı" (magic number — dosya imzası) kontrol etmek, bozuk kodlama sorunlarını teşhis etmek için sistem yöneticisinin sık başvurduğu araçlardır.
 
 ### Paket yönetim sistemleri — bir paket gerçekte nedir, kurulum/kaldırma/güncelleme nasıl çalışır
 
-**Bir "paket" aslında ne içerir?**
-Bir `.deb` (Debian/Ubuntu) ya da `.rpm` (RHEL/Fedora/Rocky) dosyası, sihirli bir kurulum programı değil — sadece **yapılandırılmış bir arşivdir** (yukarıda gördüğün `tar` mantığına çok yakın). Bir `.deb` dosyasının içinde üç parça vardır:
-1. **`control.tar.xz`** — paketin **metadata**'sı: adı, sürümü, **bağımlılıkları** (`Depends: libc6 (>= 2.34), ...`), kurulum öncesi/sonrası çalıştırılacak küçük betikler (`preinst`/`postinst`).
-2. **`data.tar.xz`** — paketin **gerçek dosyaları** (binary'ler, config dosyaları, kütüphaneler) — sistemdeki hangi tam yola (`/usr/bin/...`, `/etc/...`) kopyalanacaklarını da içinde taşır.
-3. **`debian-binary`** — format sürümünü belirten küçük bir metin dosyası.
+**Mekanizma — bir "paket" ne içerir:**
+Bir `.deb` (Debian/Ubuntu) ya da `.rpm` (RHEL/Fedora/Rocky) dosyası sihirli bir kurulum programı değil — **yapılandırılmış bir arşivdir**.
+
+Bir **`.deb`**, aslında bir **`ar` arşividir** (`man 5 deb`) ve sırayla üç üye içerir:
+1. **`debian-binary`** — format sürümünü belirten küçük metin (`2.0`).
+2. **`control.tar.{gz,xz,zst}`** — paketin **metadata**'sı: adı, sürümü, **bağımlılıkları** (`Depends: libc6 (>= 2.34), ...`), kurulum öncesi/sonrası betikleri (`preinst`/`postinst`).
+3. **`data.tar.{gz,xz,zst}`** — paketin **gerçek dosyaları**, sistemdeki hedef yollarıyla (`/usr/bin/...`, `/etc/...`) birlikte.
+
+Bir **`.rpm`** benzer biçimde: lead + imza + **header** (metadata/bağımlılıklar) + genelde sıkıştırılmış **cpio yükü** (dosyalar).
 
 ```bash
-ar t paket.deb                 # bir .deb'in aslında bir 'ar' arşivi olduğunu, içindeki 3 parçayı göster
-dpkg -c paket.deb               # data.tar.xz içindeki dosya listesini (nereye kurulacaklarını) göster
-dpkg -I paket.deb               # control bilgisini (bağımlılıklar, açıklama) göster
+ar t paket.deb                 # .deb'in bir 'ar' arşivi olduğunu, 3 üyeyi göster
+dpkg -c paket.deb               # data.tar içindeki dosya listesi (nereye kurulacaklar)
+dpkg -I paket.deb               # control bilgisi (bağımlılıklar, açıklama)
+rpm -qpl paket.rpm              # .rpm içindeki dosya listesi
+rpm -qpR paket.rpm              # .rpm'in bağımlılıkları
 ```
 
-**Kurulum sırasında gerçekte ne oluyor?**
-1. `data.tar.xz` içindeki dosyalar, kendi hedef yollarına **çıkarılır** (kopyalanır).
-2. Her dosyanın **hangi pakete ait olduğu**, sistemin yerel bir veritabanına kaydedilir (Debian ailesinde `/var/lib/dpkg/status` ve `/var/lib/dpkg/info/`, RPM ailesinde kendi RPM veritabanı). Bu kayıt kritik önemdedir — **kaldırma (`remove`) işleminin nasıl "hangi dosyaları sileceğini bildiğinin"** tek nedeni budur; paket yöneticisi tahmin etmez, tam olarak hangi dosyaların o pakete ait olduğunu bu veritabanından okur.
-3. Paketin `postinst` betiği varsa çalıştırılır (örn. bir servisi etkinleştirmek, bir kullanıcı oluşturmak gibi kurulumun "son rötuşları").
+**Kurulum sırasında ne oluyor?**
+1. `data.tar` içindeki dosyalar hedef yollarına **çıkarılır**.
+2. Her dosyanın **hangi pakete ait olduğu** yerel bir veritabanına kaydedilir — Debian: `/var/lib/dpkg/status` + `/var/lib/dpkg/info/`; RPM: `/var/lib/rpm` veritabanı. **Bu kayıt kritik:** kaldırma (`remove`) işleminin "hangi dosyaları sileceğini" bilmesinin tek nedeni budur — paket yöneticisi tahmin etmez, veritabanından okur.
+3. `postinst` betiği varsa çalıştırılır (servis etkinleştir, kullanıcı oluştur — kurulumun "son rötuşları").
 
-**Silme (`remove`/`purge`):** Veritabanındaki kayda bakılarak o pakete ait dosyalar tek tek silinir; `purge` ayrıca `/etc` altındaki yapılandırma dosyalarını da kaldırır (`remove` bunları bilerek bırakır — belki yeniden kurarsın diye).
+**Silme (`remove` / `purge`):** veritabanı kaydına bakılarak o pakete ait dosyalar silinir; `purge` ayrıca `/etc` altındaki config'i de kaldırır (`remove` bilerek bırakır — belki yeniden kurarsın).
 
-**Güncelleme (`upgrade`):** Aslında ayrı bir mekanizma değildir — yeni sürümün dosyaları eskisinin **üzerine** yazılır, `postinst` betiği bu sefer "eski sürümden şuna geçiş yapılıyor" bilgisiyle çalışır (örn. eski bir config formatını yeni formata migrate edebilir).
+**Güncelleme (`upgrade`):** ayrı bir mekanizma değil — yeni sürümün dosyaları eskisinin üzerine yazılır, `postinst` bu sefer "eski sürümden geçiş" bilgisiyle çalışır (eski config formatını migrate edebilir).
+
+**5N1K çerçevesinde paket yöneticisi:**
+- **Ne:** yazılımı doğru yerlere kopyalayıp bir veritabanına kaydeden + bağımlılıkları çözen katman.
+- **Nasıl:** düşük seviye araç (`dpkg`/`rpm`) tek pakete dokunur, dosyaları yerleştirir/siler, veritabanını günceller; yüksek seviye araç (`apt`/`dnf`) repo indekslerinden **bağımlılık grafiğini** çözer, gerekli tüm paketleri indirir, sonra düşük seviye araca teker teker verir. *"DNF wraps rpm, apt wraps dpkg; neither installs software by itself."*
+- **Ne zaman:** sen çağırdığında; ayrıca `unattended-upgrades` / `dnf-automatic` ile zamanlanmış olarak (Gün 6'daki timer/cron mantığı).
+- **Neden elle dosya kopyalamak yerine:** (1) bağımlılıkların otomatik çözülmesi, (2) "hangi dosya nereden geldi" kaydı → temiz kaldırma ve bütünlük kontrolü (`debsums` / `rpm -V`), (3) imzalı repo → sahte/bozuk paket engellenir. Paket yöneticisi dışında elle dosya silmek/değiştirmek bu veritabanını gerçekle çelişir hâle getirir.
+- **Kim:** kurulum/kaldırma root gerektirir (sistem yollarına yazma); sorgulama (`apt show`, `rpm -q`) sıradan kullanıcıyla yapılır.
 
 **Repo (depo) gerçekte nedir?**
-Bir "repo", büyülü bir sunucu değil — sadece HTTP üzerinden erişilen, içinde şunlar olan **düz bir dizin**dir: (a) gerçek `.deb`/`.rpm` dosyaları, (b) bunların **hepsinin bir listesini** çıkaran bir **indeks dosyası** (Debian'da `Packages.gz`, üstünde bütünlüğü imzalayan `Release`/`InRelease`; RPM ailesinde `repodata/repomd.xml`).
+Büyülü bir sunucu değil — HTTP üzerinden erişilen, içinde şunlar olan bir dizin ağacı:
+- **Debian:** `pool/` altında gerçek `.deb` dosyaları; `dists/<sürüm>/<bileşen>/binary-<mimari>/Packages.gz` indeksi (her paket için `Depends`, `Filename`, `SHA256`); `dists/<sürüm>/InRelease` (imzalı — tüm indekslerin checksum'larını listeler, `Release` + `Release.gpg` eski istemciler için).
+- **RPM (dnf/yum):** `repodata/repomd.xml` (ana indeks) → `primary.xml.gz` (paket listesi + bağımlılıklar) + `filelists.xml.gz` + `other.xml.gz`.
 
-- `apt update` çalıştırdığında olan şey: senin makinen bu indeks dosyalarını indirir, yerelde (`/var/lib/apt/lists/`) önbelleğe alır. **Hiçbir paket henüz indirilmez** — sadece "hangi paketler hangi sürümde mevcut" bilgisi güncellenir.
-- `apt install X` çalıştırdığında: yerel önbellekteki indeksten X'in bağımlılık listesine bakılır, **henüz kurulu olmayan** bağımlılıklar için de aynı işlem tekrarlanır (bu bir **bağımlılık grafiği** çözümlemesidir — "X, Y'ye ihtiyaç duyar; Y de Z'ye ihtiyaç duyar" şeklinde zincirleme çözülür), gerekli tüm `.deb` dosyaları indirilir, sonra `dpkg` her biri için yukarıdaki kurulum adımlarını uygular.
+- `apt update` / `dnf makecache`: makine **sadece bu indeks dosyalarını** indirir, yerelde önbelleğe alır (`/var/lib/apt/lists/`). **Hiçbir paket indirilmez** — sadece "hangi paket hangi sürümde mevcut" güncellenir.
+- `apt install X`: yerel indeksten X'in bağımlılık listesine bakılır, eksik bağımlılıklar için de aynısı tekrarlanır (zincirleme bağımlılık grafiği çözümü), gerekli tüm dosyalar indirilir, `dpkg` her birine kurulum adımlarını uygular.
 
 **Dağıtımlar arası fark — aynı kavram, farklı araçlar:**
 
-| Dağıtım ailesi | Düşük seviye araç | Yüksek seviye (kullanıcı dostu) araç | Paket formatı |
-|---|---|---|---|
-| Debian / Ubuntu | `dpkg` | `apt` (`apt-get`/`apt-cache`'in daha rahat arayüzü) | `.deb` |
-| RHEL / Fedora / Rocky / Alma | `rpm` | `dnf` (eskiden `yum`) | `.rpm` |
-| Arch (referans için) | — | `pacman` | `.pkg.tar.zst` |
+| Dağıtım ailesi | Düşük seviye | Yüksek seviye | Paket formatı | Yerel veritabanı |
+|---|---|---|---|---|
+| Debian / Ubuntu | `dpkg` | `apt` (`apt-get`/`apt-cache`'in modern arayüzü) | `.deb` | `/var/lib/dpkg/` |
+| RHEL / Fedora / Rocky / Alma | `rpm` | `dnf` (Fedora'da artık `dnf5`; eski adı `yum`) | `.rpm` | `/var/lib/rpm/` |
+| Arch (referans) | — | `pacman` | `.pkg.tar.zst` | `/var/lib/pacman/` |
+| openSUSE (referans) | `rpm` | `zypper` | `.rpm` | `/var/lib/rpm/` |
 
-Fark sadece **isimlerde/formatta** değil — **bağımlılık çözme algoritmaları ve metadata biçimleri** de farklıdır, bu yüzden bir `.deb` dosyasını doğrudan RHEL'e kuramazsın (dönüştürme araçları — `alien` gibi — var ama garantili/önerilen değildir).
+Fark sadece isimlerde/formatta değil — **bağımlılık çözme algoritmaları ve metadata biçimleri** de farklıdır (modern `apt` kendi çözücüsüne sahip; `dnf5` çözücüyü C++ `libdnf5`'e taşıdı). Bu yüzden bir `.deb`'i doğrudan RHEL'e kuramazsın (`alien` gibi dönüştürücüler var ama önerilmez).
 
-**`apt` komutu ve en sık kullanılan parametreleri:**
+**`apt` ve en sık kullanılan parametreleri:**
 ```bash
 sudo apt update                    # repo indekslerini güncelle (henüz paket indirmez)
 sudo apt upgrade                   # kurulu paketleri en yeni sürümlerine güncelle
-sudo apt install paket_adi         # paketi (ve eksik bağımlılıklarını) kur
+sudo apt full-upgrade              # gerekirse paket kaldırarak da güncelle (eski adı dist-upgrade)
+sudo apt install paket_adi         # paketi + eksik bağımlılıklarını kur
 sudo apt remove paket_adi          # paketi kaldır, /etc altındaki config'i BIRAKIR
-sudo apt purge paket_adi           # paketi + config dosyalarını da tamamen kaldır
+sudo apt purge paket_adi           # paket + config dosyalarını da tamamen kaldır
 sudo apt autoremove                # başka hiçbir paketin ihtiyaç duymadığı "öksüz" bağımlılıkları temizle
 apt search kelime                  # yerel indekste isim/açıklamaya göre ara
-apt show paket_adi                 # bir paketin bağımlılıkları/açıklaması/boyutu gibi detaylarını göster
-apt list --installed               # sistemde kurulu tüm paketleri listele
+apt show paket_adi                 # bağımlılıklar/açıklama/boyut detayı
+apt list --installed               # kurulu tüm paketler
+apt-mark hold paket_adi            # bu paketi güncellemelerden sabitle (dondur)
 ```
+
+DNF karşılıkları: `dnf check-update` ≈ `apt update` + `upgrade` listesi, `dnf install/remove/upgrade`, `dnf autoremove`, `dnf search`, `dnf info`, `dnf list installed`, `dnf mark`.
 
 ### Kaynaklar
 
-`/proc/<pid>/fd/` ile silinmiş-ama-açık dosya kurtarma, `tar`/`gzip`/`xz` mekaniği ve ASCII/HEX ilişkisi, `man 5 proc`/`man 1 tar`/`man 1 xxd` ile doğrudan doğrulanabilir genel bilgilerdir — ayrıca kaynak gösterilmedi. `.deb` paket formatının iç yapısı resmi bir format tanımı olduğu için doğrulandı:
+**Bu başlık her zaman Genişletilmiş Anlatım'ın SON `###` bölümüdür** — hemen ardından `## Notlar` gelir.
 
-- **`.deb` dosyasının `ar` arşivi olduğu, sırasıyla `debian-binary` + `control.tar` + `data.tar` üyelerini içerdiği:**
-  - [deb(5) — Debian binary package format, man7.org (Linux man-pages projesi, resmi)](https://man7.org/linux/man-pages/man5/deb.5.html)
+- **FHS ve `man hier`:**
+  - [Filesystem Hierarchy Standard 3.0 — Linux Foundation Refspecs](https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html) — `/opt`, `/srv`, `/usr/local` tanımları; standardın zorunlu olmayan doğası. (Ayrıntı [Gün 3#Dizin yapısı (FHS) — hangi dizin ne işe yarar, ve **neden** böyle ayrılmış](Gün%203.md#dizin-yapısı-fhs-hangi-dizin-ne-işe-yarar-ve-neden-böyle-ayrılmış).)
+- **`/proc/<pid>/fd/` ile silinmiş-ama-açık dosya kurtarma:**
+  - [proc(5) — man7.org](https://man7.org/linux/man-pages/man5/proc.5.html) — `/proc/[pid]/fd/` symlink girdileri; silinen hedefin `(deleted)` etiketiyle görünmesi.
+- **`tar` / ustar / pax formatı (merkezi dizin yok, sıralı akış):**
+  - [Basic Tar Format — GNU tar manual](https://www.gnu.org/software/tar/manual/html_node/Standard.html) — 512 baytlık başlık + veri + dolgu blokları; arşiv sonu iki sıfır blok.
+  - [ustar — Wikipedia (tar)](https://en.wikipedia.org/wiki/Tar_(computing)) — "originally developed to write data to sequential I/O devices with no file system of their own"; POSIX ustar/pax.
+- **`gzip` / DEFLATE (LZ77 32 KB pencere + Huffman):**
+  - [RFC 1951 — DEFLATE Compressed Data Format Specification](https://www.rfc-editor.org/rfc/rfc1951) — LZ77 + Huffman; 32 KB pencere, 258 bayt maksimum eşleşme uzunluğu.
+  - [Deflate — Wikipedia](https://en.wikipedia.org/wiki/Deflate) (tersiyer — Phil Katz / PKZIP kökeni, RFC 1951 standartlaşması).
+- **`xz` / LZMA (büyük sözlük, range coding):**
+  - [XZ data compression in Linux — The Linux Kernel documentation](https://www.kernel.org/doc/html/latest/staging/xz.html) — LZMA'nın LZ77 temeli, değişken sözlük boyutu.
+  - [xz(1) manual page](https://man7.org/linux/man-pages/man1/xz.1.html) — sözlük boyutu aralığı (4 KiB – 1.5 GiB), preset seviyeleri ve CPU/bellek maliyeti.
+- **ASCII tablosu:**
+  - [ascii(7) — man7.org](https://man7.org/linux/man-pages/man7/ascii.7.html) — 0–127 karakter–kod eşlemesi; UTF-8'in ilk 128 kod noktasında ASCII ile uyumu.
+- **`.deb` paket formatı (`ar` arşivi: `debian-binary` + `control.tar` + `data.tar`):**
+  - [deb(5) — man7.org](https://man7.org/linux/man-pages/man5/deb.5.html) — üye sırası ve içerikleri.
+- **Debian APT repo yapısı (`dists/`, `Release`/`InRelease`, `Packages.gz`, `pool/`; `apt update` sadece indeks indirir):**
+  - [DebianRepository/Format — Debian Wiki](https://wiki.debian.org/DebianRepository/Format) — `InRelease` "signed in-line" tüm indeks checksum'larını listeler; `Packages` girdisi `Filename`/`Depends`/`SHA256` içerir.
+- **`apt` vs `dnf` (her ikisi de `dpkg`/`rpm`'i sarmalar, kendisi kurulum yapmaz; farklı çözücüler):**
+  - [The Histories, Similarities and Differences of APT and DNF — djere.com](https://djere.com/the-histories-similarities-and-differences-of-the-apt-and-dnf-gnulinux-package-managers.html) (ikincil — pratik karşılaştırma; birincil doğrulama için `man apt` / `man dnf` ve yukarıdaki Debian Wiki).
+  - [RPM Reference Manual](https://rpm-software-management.github.io/rpm/manual/) — RPM'in kendisinin bağımlılık çözmediği, `/var/lib/rpm` veritabanı.
+
+Tekil bayrak/sözdizimi anlamları (`tar -x`, `apt install`, `xxd` çıktısı) ilgili `man` sayfalarıyla doğrulanabilir; bunlar için ayrıca kaynak gösterilmedi.
 
 ## Notlar
 
-- Bugünün ana teması: dün öğrendiğin "inode'a bağlı süreç" fikrinin **canlı bir kurtarma senaryosuna** dönüşmesi (`/proc/<pid>/fd/`), sıkıştırma ile arşivlemenin **birbirinden bağımsız iki katman** olduğu (`tar` paketler, `gzip`/`xz` sıkıştırır), ASCII (kodlama) ile HEX'in (sayı tabanı) hiç kıyaslanabilir iki şey olmadığı, ve paket yöneticisinin aslında sadece "dosyaları doğru yere kopyalayıp bir veritabanına kaydeden" nispeten basit bir mekanizma olduğu.
-- En kritik pratik çıkarım: bir programın hâlâ açık tuttuğu bir dosyayı yanlışlıkla silersen panik yapma — `lsof`/`/proc/<pid>/fd/` ile kurtarma şansın var, ama program kapanana kadar.
-- Paket yöneticisinin "hangi dosya hangi pakete ait" bilgisini bir veritabanında tutması, elle (paket yöneticisi dışında) dosya silip/değiştirmenin neden sistemin bütünlüğünü bozabileceğini açıklar — paket yöneticisi artık gerçekle uyuşmayan bir kayıt tutmaya başlar.
+- Bugünün ana teması: dün öğrenilen "inode'a bağlı süreç" fikrinin **canlı bir kurtarma senaryosuna** dönüşmesi (`/proc/<pid>/fd/`), **sıkıştırma ile arşivlemenin birbirinden bağımsız iki katman** olduğu (`tar` paketler → `gzip`/`xz` sıkıştırır), ASCII'nin (kodlama) HEX ile (sayı tabanı) kıyaslanamaz iki şey olduğu, ve paket yöneticisinin aslında "dosyaları doğru yere kopyalayıp bir veritabanına kaydeden + bağımlılık grafiği çözen" nispeten anlaşılır bir mekanizma olduğu.
+- En kritik pratik çıkarım: bir programın hâlâ açık tuttuğu bir dosyayı yanlışlıkla silersen panik yapma — `lsof` / `/proc/<pid>/fd/` ile kurtarma şansın var, **ama sadece o program kapanana kadar**.
+- Paket yöneticisinin "hangi dosya hangi pakete ait" veritabanı, paket yöneticisi dışında elle dosya değiştirmenin neden sistemin bütünlüğünü bozduğunu açıklar — veritabanı artık gerçekle uyuşmaz, `apt`/`dnf` bir sonraki işlemde beklenmedik davranabilir.
+- `tar.gz`, `.deb` (içi `ar` + `tar`), repo indeksleri (`Packages.gz`) — hepsi aynı "önce paketle/listeleyip sonra sıkıştır" desenini kullanıyor.
 
 ## Komutlar / Örnekler
 
 ```bash
 # silinen ama açık dosyayı kurtarma
 pgrep mpg123
+lsof | grep deleted
 ls -l /proc/<PID>/fd/
 cp /proc/<PID>/fd/3 kurtarilan.mp3
 
@@ -198,6 +252,7 @@ tar -czf arsiv.tar.gz dizin/
 tar -cJf arsiv.tar.xz dizin/
 tar -tf arsiv.tar.gz
 tar -xvf arsiv.tar.gz
+tar -czf yedek.tar.gz --exclude='*.log' dizin/
 
 # ASCII <-> HEX
 echo -n "A" | xxd
@@ -213,8 +268,16 @@ sudo apt autoremove
 apt show paket_adi
 dpkg -c paket.deb
 dpkg -I paket.deb
+
+# paket yönetimi (dnf — Rocky/RHEL)
+sudo dnf makecache
+sudo dnf install paket_adi
+sudo dnf remove paket_adi
+rpm -qpl paket.rpm
 ```
 
 ## Sorular / Takip Edilecekler
 
-- [ ]
+- [ ] Kendi VM'inde küçük bir dosya oluşturup `tail -f` ile açık tut, başka terminalden `rm` et, sonra `/proc/$(pgrep tail)/fd/` altından `cp` ile kurtar — kurtarma penceresinin `tail`'i öldürünce kapandığını gözlemle.
+- [ ] Aynı dizini `tar -czf` (gzip) ve `tar -cJf` (xz) ile arşivleyip `ls -l` ile boyut, `time` ile süre farkını karşılaştır.
+- [ ] `apt show <paket>` çıktısındaki `Depends:` satırını al, o bağımlılıklardan birini `apt show` ile aç — bağımlılık grafiğinin nasıl zincirlendiğini elle takip et.
