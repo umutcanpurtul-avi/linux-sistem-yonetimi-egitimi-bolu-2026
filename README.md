@@ -25,6 +25,7 @@ doldukça buraya eklenecek.
 işlenmiş, uygulanabilir hali (01-15).
 
 → [AI-Egitim-Dokümanı/](./AI-Egitim-Dokümanı/README.md)
+→ [AI-Egitim-Web-Site/](https://small-lake-5446.purtulumut97.workers.dev/#/)
 
 ## 🧪 Pratik Challenge
 
